@@ -34,17 +34,18 @@ public class ServiceUsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ServiceUser>> Create(ServiceUser serviceUser)
-    {
-        serviceUser.Id = Guid.NewGuid();
+public async Task<ActionResult<ServiceUser>> Create(ServiceUser serviceUser)
+{
+    serviceUser.Id = Guid.NewGuid();
+    serviceUser.DateOfBirth = DateTime.SpecifyKind(serviceUser.DateOfBirth, DateTimeKind.Utc);
 
-        _context.ServiceUsers.Add(serviceUser);
+    _context.ServiceUsers.Add(serviceUser);
 
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = serviceUser.Id },
-            serviceUser);
-    }
+    return CreatedAtAction(
+        nameof(GetById),
+        new { id = serviceUser.Id },
+        serviceUser);
+}
 }
