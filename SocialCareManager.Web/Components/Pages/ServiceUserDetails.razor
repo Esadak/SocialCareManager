@@ -1,0 +1,115 @@
+@page "/serviceusers/{Id:guid}"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h1>Service user details</h1>
+
+@if (serviceUser is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h3>@serviceUser.FirstName @serviceUser.LastName</h3>
+    <p><strong>Date of birth:</strong> @serviceUser.DateOfBirth.ToShortDateString()</p>
+
+    <h4>Daily notes</h4>
+
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input class="form-control" @bind="newNote.Title" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Content</label>
+        <textarea class="form-control" @bind="newNote.Content"></textarea>
+    </div>
+
+    <button class="btn btn-primary mb-3" @onclick="CreateNote">
+        Add Daily Note
+    </button>
+
+    @if (dailyNotes is null)
+    {
+        <p>Loading notes...</p>
+    }
+    else if (dailyNotes.Count == 0)
+    {
+        <p>No daily notes found.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var note in dailyNotes)
+            {
+                <li class="mb-2">
+                    <strong>@note.Title</strong><br />
+                    @note.Content
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private ServiceUserDto? serviceUser;
+    private List<DailyNoteDto>? dailyNotes;
+    private CreateDailyNoteDto newNote = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        serviceUser = await Http.GetFromJsonAsync<ServiceUserDto>(
+            $"http://localhost:5195/api/serviceusers/{Id}");
+
+        dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
+            $"http://localhost:5195/api/serviceusers/{Id}/dailynotes");
+    }
+
+    private async Task CreateNote()
+    {
+        var response = await Http.PostAsJsonAsync(
+            $"http://localhost:5195/api/serviceusers/{Id}/dailynotes",
+            newNote);
+
+        if (response.IsSuccessStatusCode)
+        {
+            newNote = new CreateDailyNoteDto();
+
+            dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
+                $"http://localhost:5195/api/serviceusers/{Id}/dailynotes");
+        }
+    }
+
+    public class ServiceUserDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public DateTime DateOfBirth { get; set; }
+    }
+
+    public class DailyNoteDto
+    {
+        public Guid Id { get; set; }
+        public Guid ServiceUserId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class CreateDailyNoteDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+    }
+}

@@ -26,8 +26,10 @@ else
             @foreach (var user in serviceUsers)
             {
                 <tr>
-                    <td>@user.FirstName</td>
-                    <td>@user.LastName</td>
+                    <td>
+                  <a href="@($"/serviceusers/{user.Id}")">@user.FirstName</a>
+                  </td>
+                  <td>@user.LastName</td>
                     <td>@user.DateOfBirth.ToShortDateString()</td>
                 </tr>
             }
