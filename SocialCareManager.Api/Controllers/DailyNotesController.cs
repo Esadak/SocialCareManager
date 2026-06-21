@@ -50,4 +50,24 @@ public class DailyNotesController : ControllerBase
             new { serviceUserId },
             note);
     }
+
+    [HttpDelete("{noteId:guid}")]
+public async Task<IActionResult> Delete(
+    Guid serviceUserId,
+    Guid noteId)
+{
+    var note = await _context.DailyNotes
+        .FirstOrDefaultAsync(x =>
+            x.Id == noteId &&
+            x.ServiceUserId == serviceUserId);
+
+    if (note is null)
+        return NotFound();
+
+    _context.DailyNotes.Remove(note);
+
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
 }
