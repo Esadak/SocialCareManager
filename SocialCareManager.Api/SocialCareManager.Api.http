@@ -1,0 +1,6 @@
+@SocialCareManager.Api_HostAddress = http://localhost:5195
+
+GET {{SocialCareManager.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

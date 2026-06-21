@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SocialCareManager.Api/SocialCareManager.Api.csproj" />
+  <Project Path="SocialCareManager.Domain/SocialCareManager.Domain.csproj" />
+  <Project Path="SocialCareManager.Infrastructure/SocialCareManager.Infrastructure.csproj" />
+  <Project Path="SocialCareManager.Web/SocialCareManager.Web.csproj" />
+</Solution>
