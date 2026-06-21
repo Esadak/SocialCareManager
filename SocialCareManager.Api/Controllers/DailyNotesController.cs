@@ -50,7 +50,7 @@ public class DailyNotesController : ControllerBase
             new { serviceUserId },
             note);
     }
-
+                                                    /*Delete */
     [HttpDelete("{noteId:guid}")]
 public async Task<IActionResult> Delete(
     Guid serviceUserId,
@@ -65,6 +65,29 @@ public async Task<IActionResult> Delete(
         return NotFound();
 
     _context.DailyNotes.Remove(note);
+
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
+                                                            /*update */
+[HttpPut("{noteId:guid}")]
+public async Task<IActionResult> Update(
+    Guid serviceUserId,
+    Guid noteId,
+    DailyNote updatedNote)
+{
+    var note = await _context.DailyNotes
+        .FirstOrDefaultAsync(x =>
+            x.Id == noteId &&
+            x.ServiceUserId == serviceUserId);
+
+    if (note is null)
+        return NotFound();
+
+    note.Title = updatedNote.Title;
+    note.Content = updatedNote.Content;
+    note.UpdatedAt = DateTime.UtcNow;
 
     await _context.SaveChangesAsync();
 
