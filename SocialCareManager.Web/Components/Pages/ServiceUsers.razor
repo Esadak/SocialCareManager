@@ -1,0 +1,54 @@
+@page "/serviceusers"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h1>Service users</h1>
+
+@if (serviceUsers is null)
+{
+    <p>Loading...</p>
+}
+else if (serviceUsers.Count == 0)
+{
+    <p>No service users found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>First name</th>
+                <th>Last name</th>
+                <th>Date of birth</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in serviceUsers)
+            {
+                <tr>
+                    <td>@user.FirstName</td>
+                    <td>@user.LastName</td>
+                    <td>@user.DateOfBirth.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ServiceUserDto>? serviceUsers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
+            "http://localhost:5195/api/serviceusers");
+    }
+
+    public class ServiceUserDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public DateTime DateOfBirth { get; set; }
+    }
+}
