@@ -10,5 +10,5 @@ public class DailyNote : BaseEntity
 
     public string Content { get; set; } = string.Empty;
 
-    public ServiceUser ServiceUser { get; set; } = null!;
+    public ServiceUser? ServiceUser { get; set; }
 }
