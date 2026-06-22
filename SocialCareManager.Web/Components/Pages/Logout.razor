@@ -1,0 +1,15 @@
+@page "/logout"
+@rendermode InteractiveServer
+@using SocialCareManager.Web.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<p>Logging out...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+}

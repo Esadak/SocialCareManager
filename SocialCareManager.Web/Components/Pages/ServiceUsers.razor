@@ -1,6 +1,8 @@
 @using SocialCareManager.Web.Services
-@using System.Net.Http.Headers
 @inject AuthService AuthService
+@inject NavigationManager Navigation
+@using System.Net.Http.Headers
+
 @page "/serviceusers"
 @rendermode InteractiveServer
 @using System.Net.Http.Json
@@ -67,14 +69,18 @@ else
     private CreateServiceUserDto newServiceUser = new();
 
     protected override async Task OnInitializedAsync()
+{
+    if (!AuthService.IsLoggedIn)
     {
-        await LoadServiceUsers();
+        Navigation.NavigateTo("/login");
+        return;
     }
+
+    await LoadServiceUsers();
+}
 
     private async Task LoadServiceUsers()
 {
-    if (!AuthService.IsLoggedIn)
-        return;
 
     Http.DefaultRequestHeaders.Authorization =
         new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
