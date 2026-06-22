@@ -11,8 +11,44 @@
 }
 else
 {
-    <h3>@serviceUser.FirstName @serviceUser.LastName</h3>
-    <p><strong>Date of birth:</strong> @serviceUser.DateOfBirth.ToShortDateString()</p>
+    @if (!isEditing)
+    {
+        <h3>@serviceUser.FirstName @serviceUser.LastName</h3>
+        <p><strong>Date of birth:</strong> @serviceUser.DateOfBirth.ToShortDateString()</p>
+
+        <button class="btn btn-secondary mb-3" @onclick="StartEdit">
+            Edit user
+        </button>
+    }
+    else
+    {
+        <h4>Edit service user</h4>
+
+        <div class="mb-3">
+            <label class="form-label">First name</label>
+            <input class="form-control" @bind="editServiceUser.FirstName" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Last name</label>
+            <input class="form-control" @bind="editServiceUser.LastName" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Date of birth</label>
+            <input type="date" class="form-control" @bind="editServiceUser.DateOfBirth" />
+        </div>
+
+        <button class="btn btn-primary me-2" @onclick="SaveUser">
+            Save
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="CancelEdit">
+            Cancel
+        </button>
+    }
+
+    <hr />
 
     <h4>Daily notes</h4>
 
@@ -59,6 +95,8 @@ else
     private ServiceUserDto? serviceUser;
     private List<DailyNoteDto>? dailyNotes;
     private CreateDailyNoteDto newNote = new();
+    private EditServiceUserDto editServiceUser = new();
+    private bool isEditing;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,6 +110,41 @@ else
 
         dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
             $"http://localhost:5195/api/serviceusers/{Id}/dailynotes");
+    }
+
+    private void StartEdit()
+    {
+        if (serviceUser is null)
+            return;
+
+        editServiceUser = new EditServiceUserDto
+        {
+            FirstName = serviceUser.FirstName,
+            LastName = serviceUser.LastName,
+            DateOfBirth = serviceUser.DateOfBirth
+        };
+
+        isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+    }
+
+    private async Task SaveUser()
+    {
+        var response = await Http.PutAsJsonAsync(
+            $"http://localhost:5195/api/serviceusers/{Id}",
+            editServiceUser);
+
+        if (response.IsSuccessStatusCode)
+        {
+            serviceUser = await Http.GetFromJsonAsync<ServiceUserDto>(
+                $"http://localhost:5195/api/serviceusers/{Id}");
+
+            isEditing = false;
+        }
     }
 
     private async Task CreateNote()
@@ -92,6 +165,13 @@ else
     public class ServiceUserDto
     {
         public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public DateTime DateOfBirth { get; set; }
+    }
+
+    public class EditServiceUserDto
+    {
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
