@@ -48,4 +48,25 @@ public async Task<ActionResult<ServiceUser>> Create(ServiceUser serviceUser)
         new { id = serviceUser.Id },
         serviceUser);
 }
+
+[HttpPut("{id:guid}")]
+public async Task<IActionResult> Update(Guid id, ServiceUser updatedServiceUser)
+{
+    var serviceUser = await _context.ServiceUsers.FindAsync(id);
+
+    if (serviceUser is null)
+        return NotFound();
+
+    serviceUser.FirstName = updatedServiceUser.FirstName;
+    serviceUser.LastName = updatedServiceUser.LastName;
+    serviceUser.DateOfBirth = DateTime.SpecifyKind(
+        updatedServiceUser.DateOfBirth,
+        DateTimeKind.Utc);
+
+    serviceUser.UpdatedAt = DateTime.UtcNow;
+
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
 }
