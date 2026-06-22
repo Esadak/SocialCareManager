@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SocialCareManager.Domain.Entities;
 using SocialCareManager.Infrastructure.Data;
 
 namespace SocialCareManager.Api.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ServiceUsersController : ControllerBase
