@@ -69,4 +69,21 @@ public async Task<IActionResult> Update(Guid id, ServiceUser updatedServiceUser)
 
     return NoContent();
 }
+
+[HttpDelete("{id:guid}")]
+public async Task<IActionResult> Delete(Guid id)
+{
+    var serviceUser = await _context.ServiceUsers
+        .Include(x => x.DailyNotes)
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (serviceUser is null)
+        return NotFound();
+
+    _context.ServiceUsers.Remove(serviceUser);
+
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
 }
