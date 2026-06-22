@@ -1,7 +1,93 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@using System.Net.Http.Headers
+@using SocialCareManager.Web.Services
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>SocialCareManager Dashboard</h1>
 
-Welcome to your new app.
+@if (!AuthService.IsLoggedIn)
+{
+    <p>Please login to continue.</p>
+
+    <a class="btn btn-primary" href="/login">
+        Go to Login
+    </a>
+}
+else if (isLoading)
+{
+    <p>Loading dashboard...</p>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>Total Service Users</h5>
+                <h2>@serviceUserCount</h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>Total Daily Notes</h5>
+                <h2>@dailyNoteCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <a class="btn btn-primary" href="/serviceusers">
+        Go to Service Users
+    </a>
+}
+
+@code {
+    private bool isLoading = true;
+    private int serviceUserCount;
+    private int dailyNoteCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            isLoading = false;
+            return;
+        }
+
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+
+        var serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
+            "http://localhost:5195/api/serviceusers");
+
+        serviceUserCount = serviceUsers?.Count ?? 0;
+
+        if (serviceUsers is not null)
+        {
+            foreach (var user in serviceUsers)
+            {
+                var notes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
+                    $"http://localhost:5195/api/serviceusers/{user.Id}/dailynotes");
+
+                dailyNoteCount += notes?.Count ?? 0;
+            }
+        }
+
+        isLoading = false;
+    }
+
+    public class ServiceUserDto
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class DailyNoteDto
+    {
+        public Guid Id { get; set; }
+    }
+}
