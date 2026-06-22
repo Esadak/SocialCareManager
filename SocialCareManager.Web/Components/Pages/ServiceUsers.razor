@@ -1,12 +1,11 @@
-@using SocialCareManager.Web.Services
-@inject AuthService AuthService
-@inject NavigationManager Navigation
-@using System.Net.Http.Headers
-
 @page "/serviceusers"
 @rendermode InteractiveServer
 @using System.Net.Http.Json
+@using System.Net.Http.Headers
+@using SocialCareManager.Web.Services
 @inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
 
 <h1>Service users</h1>
 
@@ -31,11 +30,26 @@
     Add Service User
 </button>
 
+<hr />
+
+<h4>Search</h4>
+
+<div class="mb-3">
+    <input class="form-control"
+           placeholder="Search by first name or last name..."
+           @bind="searchText"
+           @bind:event="oninput" />
+</div>
+
+<button class="btn btn-outline-secondary mb-4" @onclick="ClearSearch">
+    Clear search
+</button>
+
 @if (serviceUsers is null)
 {
     <p>Loading...</p>
 }
-else if (serviceUsers.Count == 0)
+else if (FilteredServiceUsers.Count == 0)
 {
     <p>No service users found.</p>
 }
@@ -50,7 +64,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in serviceUsers)
+            @foreach (var user in FilteredServiceUsers)
             {
                 <tr>
                     <td>
@@ -67,30 +81,51 @@ else
 @code {
     private List<ServiceUserDto>? serviceUsers;
     private CreateServiceUserDto newServiceUser = new();
+    private string searchText = string.Empty;
 
-    protected override async Task OnInitializedAsync()
-{
-    if (!AuthService.IsLoggedIn)
+    private List<ServiceUserDto> FilteredServiceUsers
     {
-        Navigation.NavigateTo("/login");
-        return;
+        get
+        {
+            if (serviceUsers is null)
+                return new List<ServiceUserDto>();
+
+            if (string.IsNullOrWhiteSpace(searchText))
+                return serviceUsers;
+
+            return serviceUsers
+                .Where(user =>
+                    user.FirstName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    user.LastName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
     }
 
-    await LoadServiceUsers();
-}
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadServiceUsers();
+    }
 
     private async Task LoadServiceUsers()
-{
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
 
-    Http.DefaultRequestHeaders.Authorization =
-        new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
-
-    serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
-        "http://localhost:5195/api/serviceusers");
-}
+        serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
+            "http://localhost:5195/api/serviceusers");
+    }
 
     private async Task CreateServiceUser()
     {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+
         var response = await Http.PostAsJsonAsync(
             "http://localhost:5195/api/serviceusers",
             newServiceUser);
@@ -100,6 +135,11 @@ else
             newServiceUser = new CreateServiceUserDto();
             await LoadServiceUsers();
         }
+    }
+
+    private void ClearSearch()
+    {
+        searchText = string.Empty;
     }
 
     public class ServiceUserDto
