@@ -1,0 +1,48 @@
+@page "/login"
+@rendermode InteractiveServer
+@using SocialCareManager.Web.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<h1>Login</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+<div class="mb-3">
+    <label class="form-label">Email</label>
+    <input class="form-control" @bind="email" />
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" class="form-control" @bind="password" />
+</div>
+
+<button class="btn btn-primary" @onclick="HandleLogin">
+    Login
+</button>
+
+@code {
+    private string email = "admin@socialcaremanager.local";
+    private string password = "Admin123!";
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        var success = await AuthService.LoginAsync(email, password);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/serviceusers");
+        }
+        else
+        {
+            errorMessage = "Login failed.";
+        }
+    }
+}

@@ -1,7 +1,9 @@
+using SocialCareManager.Web.Services;
 using SocialCareManager.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<AuthService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

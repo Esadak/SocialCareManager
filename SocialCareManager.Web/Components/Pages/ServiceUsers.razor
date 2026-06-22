@@ -1,3 +1,6 @@
+@using SocialCareManager.Web.Services
+@using System.Net.Http.Headers
+@inject AuthService AuthService
 @page "/serviceusers"
 @rendermode InteractiveServer
 @using System.Net.Http.Json
@@ -69,10 +72,16 @@ else
     }
 
     private async Task LoadServiceUsers()
-    {
-        serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
-            "http://localhost:5195/api/serviceusers");
-    }
+{
+    if (!AuthService.IsLoggedIn)
+        return;
+
+    Http.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+
+    serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
+        "http://localhost:5195/api/serviceusers");
+}
 
     private async Task CreateServiceUser()
     {
