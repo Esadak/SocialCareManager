@@ -47,12 +47,35 @@ using (var scope = app.Services.CreateScope())
     }
 
     var adminEmail = "admin@socialcaremanager.local";
+    
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
     if (adminUser is not null && !await userManager.IsInRoleAsync(adminUser, "Admin"))
     {
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }
+
+    /*staff*/
+    var staffEmail = "staff@socialcaremanager.local";
+
+var staffUser = await userManager.FindByEmailAsync(staffEmail);
+
+if (staffUser == null)
+{
+    staffUser = new IdentityUser
+    {
+        UserName = staffEmail,
+        Email = staffEmail,
+        EmailConfirmed = true
+    };
+
+    await userManager.CreateAsync(staffUser, "Staff123!");
+}
+
+if (!await userManager.IsInRoleAsync(staffUser, "Staff"))
+{
+    await userManager.AddToRoleAsync(staffUser, "Staff");
+}
 }
 
 app.Run();
