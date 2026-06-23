@@ -71,6 +71,7 @@ public async Task<IActionResult> Update(Guid id, ServiceUser updatedServiceUser)
     return NoContent();
 }
 
+[Authorize(Roles = "Admin")]
 [HttpDelete("{id:guid}")]
 public async Task<IActionResult> Delete(Guid id)
 {
