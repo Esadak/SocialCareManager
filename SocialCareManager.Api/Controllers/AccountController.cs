@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SocialCareManager.Infrastructure.Identity;
 
 namespace SocialCareManager.Api.Controllers;
 
@@ -8,9 +9,9 @@ namespace SocialCareManager.Api.Controllers;
 [Route("api/[controller]")]
 public class AccountController : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AccountController(UserManager<IdentityUser> userManager)
+    public AccountController(UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
     }
@@ -29,6 +30,9 @@ public class AccountController : ControllerBase
         return Ok(new
         {
             email = user.Email,
+            firstName = user.FirstName,
+            lastName = user.LastName,
+            fullName = $"{user.FirstName} {user.LastName}".Trim(),
             roles
         });
     }

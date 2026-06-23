@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SocialCareManager.Domain.Entities;
 using SocialCareManager.Infrastructure.Data;
-using System.Security.Claims;
 
 namespace SocialCareManager.Api.Controllers;
 
@@ -42,7 +41,8 @@ public class DailyNotesController : ControllerBase
 
         note.Id = Guid.NewGuid();
         note.ServiceUserId = serviceUserId;
-        note.CreatedBy = GetCurrentUserEmail();
+        note.CreatedBy = GetCurrentUserName();
+        note.UpdatedBy = null;
 
         _context.DailyNotes.Add(note);
 
@@ -71,7 +71,7 @@ public class DailyNotesController : ControllerBase
         note.Title = updatedNote.Title;
         note.Content = updatedNote.Content;
         note.UpdatedAt = DateTime.UtcNow;
-        note.UpdatedBy = GetCurrentUserEmail();
+        note.UpdatedBy = GetCurrentUserName();
 
         await _context.SaveChangesAsync();
 
@@ -98,11 +98,23 @@ public class DailyNotesController : ControllerBase
         return NoContent();
     }
 
-    private string GetCurrentUserEmail()
+    private string GetCurrentUserName()
     {
-        return User.FindFirstValue(ClaimTypes.Email)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.Identity?.Name
-            ?? "Unknown";
+        var email = User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return "Unknown User";
+
+        var user = _context.Users
+            .FirstOrDefault(x => x.Email == email);
+
+        if (user is null)
+            return email;
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+
+        return string.IsNullOrWhiteSpace(fullName)
+            ? email
+            : fullName;
     }
 }
