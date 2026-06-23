@@ -10,5 +10,9 @@ public class DailyNote : BaseEntity
 
     public string Content { get; set; } = string.Empty;
 
+    public string CreatedBy { get; set; } = string.Empty;
+
+    public string? UpdatedBy { get; set; }
+
     public ServiceUser? ServiceUser { get; set; }
 }

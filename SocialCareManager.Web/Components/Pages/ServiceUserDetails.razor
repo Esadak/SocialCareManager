@@ -115,7 +115,36 @@ else
                     else
                     {
                         <strong>@note.Title</strong><br />
-                        @note.Content<br />
+
+<small class="text-muted">
+    Created:
+    @note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+</small>
+<br />
+<small class="text-muted">
+    Created by: @note.CreatedBy
+</small>
+
+@if (note.UpdatedAt is not null)
+{
+    <br />
+    <small class="text-muted">
+        Updated:
+        @note.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+    </small>
+
+    @if (!string.IsNullOrWhiteSpace(note.UpdatedBy))
+{
+    <br />
+    <small class="text-muted">
+        Updated by: @note.UpdatedBy
+    </small>
+}
+}
+
+<br />
+@note.Content
+<br />
 
                         <button class="btn btn-secondary btn-sm mt-2 me-2" @onclick="() => StartEditNote(note)">
                             Edit
@@ -170,7 +199,11 @@ else
             $"http://localhost:5195/api/serviceusers/{Id}");
 
         dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
-            $"http://localhost:5195/api/serviceusers/{Id}/dailynotes");
+    $"http://localhost:5195/api/serviceusers/{Id}/dailynotes");
+
+dailyNotes = dailyNotes?
+    .OrderByDescending(x => x.CreatedAt)
+    .ToList();
     }
 
     private void StartEdit()
@@ -310,14 +343,16 @@ else
     }
 
     public class DailyNoteDto
-    {
-        public Guid Id { get; set; }
-        public Guid ServiceUserId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
+{
+    public Guid Id { get; set; }
+    public Guid ServiceUserId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+    public string? UpdatedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+}
 
     public class CreateDailyNoteDto
     {

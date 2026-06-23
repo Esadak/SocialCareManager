@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SocialCareManager.Domain.Entities;
 using SocialCareManager.Infrastructure.Data;
+using System.Security.Claims;
 
 namespace SocialCareManager.Api.Controllers;
+
 [Authorize]
 [ApiController]
 [Route("api/serviceusers/{serviceUserId:guid}/dailynotes")]
@@ -18,8 +20,7 @@ public class DailyNotesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DailyNote>>> GetAll(
-        Guid serviceUserId)
+    public async Task<ActionResult<IEnumerable<DailyNote>>> GetAll(Guid serviceUserId)
     {
         var notes = await _context.DailyNotes
             .Where(x => x.ServiceUserId == serviceUserId)
@@ -41,6 +42,7 @@ public class DailyNotesController : ControllerBase
 
         note.Id = Guid.NewGuid();
         note.ServiceUserId = serviceUserId;
+        note.CreatedBy = GetCurrentUserEmail();
 
         _context.DailyNotes.Add(note);
 
@@ -51,47 +53,56 @@ public class DailyNotesController : ControllerBase
             new { serviceUserId },
             note);
     }
-                                                    /*Delete */
+
+    [HttpPut("{noteId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid serviceUserId,
+        Guid noteId,
+        DailyNote updatedNote)
+    {
+        var note = await _context.DailyNotes
+            .FirstOrDefaultAsync(x =>
+                x.Id == noteId &&
+                x.ServiceUserId == serviceUserId);
+
+        if (note is null)
+            return NotFound();
+
+        note.Title = updatedNote.Title;
+        note.Content = updatedNote.Content;
+        note.UpdatedAt = DateTime.UtcNow;
+        note.UpdatedBy = GetCurrentUserEmail();
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("{noteId:guid}")]
-public async Task<IActionResult> Delete(
-    Guid serviceUserId,
-    Guid noteId)
-{
-    var note = await _context.DailyNotes
-        .FirstOrDefaultAsync(x =>
-            x.Id == noteId &&
-            x.ServiceUserId == serviceUserId);
+    public async Task<IActionResult> Delete(
+        Guid serviceUserId,
+        Guid noteId)
+    {
+        var note = await _context.DailyNotes
+            .FirstOrDefaultAsync(x =>
+                x.Id == noteId &&
+                x.ServiceUserId == serviceUserId);
 
-    if (note is null)
-        return NotFound();
+        if (note is null)
+            return NotFound();
 
-    _context.DailyNotes.Remove(note);
+        _context.DailyNotes.Remove(note);
 
-    await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-    return NoContent();
-}
-                                                            /*update */
-[HttpPut("{noteId:guid}")]
-public async Task<IActionResult> Update(
-    Guid serviceUserId,
-    Guid noteId,
-    DailyNote updatedNote)
-{
-    var note = await _context.DailyNotes
-        .FirstOrDefaultAsync(x =>
-            x.Id == noteId &&
-            x.ServiceUserId == serviceUserId);
+        return NoContent();
+    }
 
-    if (note is null)
-        return NotFound();
-
-    note.Title = updatedNote.Title;
-    note.Content = updatedNote.Content;
-    note.UpdatedAt = DateTime.UtcNow;
-
-    await _context.SaveChangesAsync();
-
-    return NoContent();
-}
+    private string GetCurrentUserEmail()
+    {
+        return User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.Identity?.Name
+            ?? "Unknown";
+    }
 }
