@@ -25,9 +25,12 @@ else
             Edit user
         </button>
 
-        <button class="btn btn-danger mb-3 ms-2" @onclick="DeleteUser">
-            Delete user
-        </button>
+        @if (AuthService.IsAdmin)
+{
+    <button class="btn btn-danger mb-3 ms-2" @onclick="DeleteUser">
+        Delete user
+    </button>
+}
     }
     else
     {
