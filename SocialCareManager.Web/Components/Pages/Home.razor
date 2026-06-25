@@ -5,19 +5,25 @@
 @using SocialCareManager.Web.Services
 @inject HttpClient Http
 @inject AuthService AuthService
-@inject NavigationManager Navigation
 
 <PageTitle>Dashboard</PageTitle>
 
-<h1>SocialCareManager Dashboard</h1>
+<div class="dashboard-header mb-4">
+    <div>
+        <h1 class="dashboard-title">
+            <i class="bi bi-speedometer2 me-2"></i>
+            Dashboard
+        </h1>
+        <p class="dashboard-subtitle">
+            Welcome back. Here's an overview of your social care workspace.
+        </p>
+    </div>
+</div>
 
 @if (!AuthService.IsLoggedIn)
 {
     <p>Please login to continue.</p>
-
-    <a class="btn btn-primary" href="/login">
-        Go to Login
-    </a>
+    <a class="btn btn-primary" href="/login">Go to Login</a>
 }
 else if (isLoading)
 {
@@ -25,31 +31,103 @@ else if (isLoading)
 }
 else
 {
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5>Total Service Users</h5>
-                <h2>@serviceUserCount</h2>
-            </div>
-        </div>
+    <p class="text-muted">
+        Logged in as: <strong>@AuthService.Email</strong><br />
+        Role: <strong>@AuthService.Role</strong>
+    </p>
 
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5>Total Daily Notes</h5>
-                <h2>@dailyNoteCount</h2>
+    <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Service Users</h6>
+                    <h2>@serviceUserCount</h2>
+                </div>
+                <span class="fs-1">👥</span>
             </div>
         </div>
     </div>
 
-    <a class="btn btn-primary" href="/serviceusers">
-        Go to Service Users
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Daily Notes</h6>
+                    <h2>@dailyNoteCount</h2>
+                </div>
+                <span class="fs-1">📝</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Next of Kin</h6>
+                    <h2>@nextOfKinCount</h2>
+                </div>
+                <span class="fs-1">👨‍👩‍👧</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Emergency Contacts</h6>
+                    <h2>@emergencyContactCount</h2>
+                </div>
+                <span class="fs-1">🚨</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <h4>Quick actions</h4>
+
+    <a class="btn btn-primary me-2 mb-3" href="/serviceusers">
+        Service Users
     </a>
+
+    <hr />
+
+    <h4>Recent Daily Notes</h4>
+
+    @if (recentNotes.Count == 0)
+    {
+        <p>No recent notes found.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var note in recentNotes)
+            {
+                <li class="list-group-item">
+                    <strong>@note.Title</strong><br />
+                    <span class="text-muted">
+                        @note.ServiceUserName —
+                        @note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    </span>
+                    <br />
+                    @note.Content
+                </li>
+            }
+        </ul>
+    }
 }
 
 @code {
     private bool isLoading = true;
+
     private int serviceUserCount;
     private int dailyNoteCount;
+    private int nextOfKinCount;
+    private int emergencyContactCount;
+
+    private List<RecentDailyNoteDto> recentNotes = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,8 +153,30 @@ else
                     $"http://localhost:5195/api/serviceusers/{user.Id}/dailynotes");
 
                 dailyNoteCount += notes?.Count ?? 0;
+
+                if (notes is not null)
+                {
+                    recentNotes.AddRange(notes.Select(note => new RecentDailyNoteDto
+                    {
+                        Title = note.Title,
+                        Content = note.Content,
+                        CreatedAt = note.CreatedAt,
+                        ServiceUserName = $"{user.FirstName} {user.LastName}"
+                    }));
+                }
+
+                var contacts = await Http.GetFromJsonAsync<List<NextOfKinDto>>(
+                    $"http://localhost:5195/api/serviceusers/{user.Id}/nextofkin");
+
+                nextOfKinCount += contacts?.Count ?? 0;
+                emergencyContactCount += contacts?.Count(x => x.IsEmergencyContact) ?? 0;
             }
         }
+
+        recentNotes = recentNotes
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(5)
+            .ToList();
 
         isLoading = false;
     }
@@ -84,10 +184,27 @@ else
     public class ServiceUserDto
     {
         public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
     }
 
     public class DailyNoteDto
     {
-        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class NextOfKinDto
+    {
+        public bool IsEmergencyContact { get; set; }
+    }
+
+    public class RecentDailyNoteDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string ServiceUserName { get; set; } = string.Empty;
     }
 }

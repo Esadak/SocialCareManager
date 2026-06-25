@@ -7,29 +7,42 @@
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<h1>Service users</h1>
+<div class="page-header">
+    <div class="page-title">
+        <i class="bi bi-people-fill"></i>
+        <h1>Service Users</h1>
+    </div>
 
-<h4>Add service user</h4>
-
-<div class="mb-3">
-    <label class="form-label">First name</label>
-    <input class="form-control" @bind="newServiceUser.FirstName" />
+    <div class="page-subtitle">
+        Manage service users, personal information and care records.
+    </div>
 </div>
 
-<div class="mb-3">
-    <label class="form-label">Last name</label>
-    <input class="form-control" @bind="newServiceUser.LastName" />
+<div class="section-card mb-4">
+    <div class="section-card-header">
+        <i class="bi bi-person-plus-fill"></i>
+        <h3>Add service user</h3>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">First name</label>
+        <input class="form-control" @bind="newServiceUser.FirstName" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Last name</label>
+        <input class="form-control" @bind="newServiceUser.LastName" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Date of birth</label>
+        <input type="date" class="form-control" @bind="newServiceUser.DateOfBirth" />
+    </div>
+
+    <button class="btn btn-primary" @onclick="CreateServiceUser">
+        Add Service User
+    </button>
 </div>
-
-<div class="mb-3">
-    <label class="form-label">Date of birth</label>
-    <input type="date" class="form-control" @bind="newServiceUser.DateOfBirth" />
-</div>
-
-<button class="btn btn-primary mb-4" @onclick="CreateServiceUser">
-    Add Service User
-</button>
-
 <hr />
 
 <h4>Search</h4>
