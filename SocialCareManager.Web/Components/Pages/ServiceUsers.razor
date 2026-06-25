@@ -45,18 +45,23 @@
 </div>
 <hr />
 
-<h4>Search</h4>
+<div class="section-card mb-4">
+    <div class="section-card-header">
+        <i class="bi bi-search"></i>
+        <h3>Search</h3>
+    </div>
 
-<div class="mb-3">
-    <input class="form-control"
-           placeholder="Search by first name or last name..."
-           @bind="searchText"
-           @bind:event="oninput" />
+    <div class="mb-3">
+        <input class="form-control"
+               placeholder="Search by first name or last name..."
+               @bind="searchText"
+               @bind:event="oninput" />
+    </div>
+
+    <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+        Clear search
+    </button>
 </div>
-
-<button class="btn btn-outline-secondary mb-4" @onclick="ClearSearch">
-    Clear search
-</button>
 
 @if (serviceUsers is null)
 {
@@ -68,7 +73,8 @@ else if (FilteredServiceUsers.Count == 0)
 }
 else
 {
-    <table class="table">
+    <div class="table-card">
+    <table class="table modern-table align-middle mb-0">
         <thead>
             <tr>
                 <th>First name</th>
@@ -89,6 +95,7 @@ else
             }
         </tbody>
     </table>
+    </div>
 }
 
 @code {

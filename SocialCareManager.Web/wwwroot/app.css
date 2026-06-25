@@ -130,3 +130,35 @@ h1:focus {
     font-size: 1.25rem;
     font-weight: 700;
 }
+
+.table-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(15,23,42,.05);
+}
+
+.modern-table thead {
+    background: #f8fafc;
+}
+
+.modern-table th {
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem;
+}
+
+.modern-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.modern-table tbody tr {
+    transition: background .15s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+}
