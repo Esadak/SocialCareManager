@@ -1,0 +1,206 @@
+@using System.Net.Http.Json
+@using System.Net.Http.Headers
+@using SocialCareManager.Web.Services
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject AuthService AuthService
+
+<h4>Daily notes</h4>
+
+<input class="form-control mb-2" placeholder="Title" @bind="newNote.Title" />
+<textarea class="form-control mb-2" placeholder="Content" @bind="newNote.Content"></textarea>
+
+<button class="btn btn-primary mb-3" @onclick="CreateNote">
+    Add Daily Note
+</button>
+
+@if (dailyNotes is null)
+{
+    <p>Loading notes...</p>
+}
+else if (dailyNotes.Count == 0)
+{
+    <p>No daily notes found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var note in dailyNotes)
+        {
+            <li class="mb-3">
+                @if (editingNoteId == note.Id)
+                {
+                    <input class="form-control mb-2" @bind="editNote.Title" />
+                    <textarea class="form-control mb-2" @bind="editNote.Content"></textarea>
+
+                    <button class="btn btn-primary btn-sm me-2" @onclick="SaveNote">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEditNote">Cancel</button>
+                }
+                else
+                {
+                    <strong>@note.Title</strong><br />
+
+                    <small class="text-muted">
+                        Created: @note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    </small>
+                    <br />
+
+                    <small class="text-muted">
+                        Created by: @note.CreatedBy
+                    </small>
+
+                    @if (note.UpdatedAt is not null)
+                    {
+                        <br />
+                        <small class="text-muted">
+                            Updated: @note.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                        </small>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(note.UpdatedBy))
+                    {
+                        <br />
+                        <small class="text-muted">
+                            Updated by: @note.UpdatedBy
+                        </small>
+                    }
+
+                    <br />
+                    @note.Content
+                    <br />
+
+                    <button class="btn btn-secondary btn-sm mt-2 me-2" @onclick="() => StartEditNote(note)">Edit</button>
+                    <button class="btn btn-danger btn-sm mt-2" @onclick="() => DeleteNote(note.Id)">Delete</button>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private List<DailyNoteDto>? dailyNotes;
+    private CreateDailyNoteDto newNote = new();
+    private EditDailyNoteDto editNote = new();
+    private Guid? editingNoteId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotes();
+    }
+
+    private void SetAuthorizationHeader()
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+    }
+
+    private async Task LoadNotes()
+    {
+        SetAuthorizationHeader();
+
+        dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
+            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes");
+
+        dailyNotes = dailyNotes?
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+    }
+
+    private async Task CreateNote()
+    {
+        SetAuthorizationHeader();
+
+        var response = await Http.PostAsJsonAsync(
+            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes",
+            newNote);
+
+        if (response.IsSuccessStatusCode)
+        {
+            newNote = new CreateDailyNoteDto();
+            await LoadNotes();
+        }
+    }
+
+    private void StartEditNote(DailyNoteDto note)
+    {
+        editingNoteId = note.Id;
+
+        editNote = new EditDailyNoteDto
+        {
+            Title = note.Title,
+            Content = note.Content
+        };
+    }
+
+    private void CancelEditNote()
+    {
+        editingNoteId = null;
+        editNote = new EditDailyNoteDto();
+    }
+
+    private async Task SaveNote()
+    {
+        if (editingNoteId is null)
+            return;
+
+        SetAuthorizationHeader();
+
+        var response = await Http.PutAsJsonAsync(
+            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes/{editingNoteId}",
+            editNote);
+
+        if (response.IsSuccessStatusCode)
+        {
+            editingNoteId = null;
+            editNote = new EditDailyNoteDto();
+            await LoadNotes();
+        }
+    }
+
+    private async Task DeleteNote(Guid noteId)
+    {
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this daily note?");
+
+        if (!confirmed)
+            return;
+
+        SetAuthorizationHeader();
+
+        var response = await Http.DeleteAsync(
+            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes/{noteId}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadNotes();
+        }
+    }
+
+    public class DailyNoteDto
+    {
+        public Guid Id { get; set; }
+        public Guid ServiceUserId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string CreatedBy { get; set; } = string.Empty;
+        public string? UpdatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class CreateDailyNoteDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+    }
+
+    public class EditDailyNoteDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+    }
+}
