@@ -1,10 +1,10 @@
 @page "/serviceusers"
 @rendermode InteractiveServer
-@using System.Net.Http.Json
-@using System.Net.Http.Headers
+@using SocialCareManager.Web.Dtos
 @using SocialCareManager.Web.Services
-@inject HttpClient Http
+@using SocialCareManager.Web.Services.Api
 @inject AuthService AuthService
+@inject ServiceUserService ServiceUserService
 @inject NavigationManager Navigation
 
 <div class="page-header">
@@ -43,7 +43,6 @@
         Add Service User
     </button>
 </div>
-<hr />
 
 <div class="section-card mb-4">
     <div class="section-card-header">
@@ -74,27 +73,27 @@ else if (FilteredServiceUsers.Count == 0)
 else
 {
     <div class="table-card">
-    <table class="table modern-table align-middle mb-0">
-        <thead>
-            <tr>
-                <th>First name</th>
-                <th>Last name</th>
-                <th>Date of birth</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in FilteredServiceUsers)
-            {
+        <table class="table modern-table align-middle mb-0">
+            <thead>
                 <tr>
-                    <td>
-                        <a href="@($"/serviceusers/{user.Id}")">@user.FirstName</a>
-                    </td>
-                    <td>@user.LastName</td>
-                    <td>@user.DateOfBirth.ToShortDateString()</td>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Date of birth</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var user in FilteredServiceUsers)
+                {
+                    <tr>
+                        <td>
+                            <a href="@($"/serviceusers/{user.Id}")">@user.FirstName</a>
+                        </td>
+                        <td>@user.LastName</td>
+                        <td>@user.DateOfBirth.ToShortDateString()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 }
 
@@ -134,23 +133,14 @@ else
 
     private async Task LoadServiceUsers()
     {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
-
-        serviceUsers = await Http.GetFromJsonAsync<List<ServiceUserDto>>(
-            "http://localhost:5195/api/serviceusers");
+        serviceUsers = await ServiceUserService.GetAllAsync();
     }
 
     private async Task CreateServiceUser()
     {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+        var success = await ServiceUserService.CreateAsync(newServiceUser);
 
-        var response = await Http.PostAsJsonAsync(
-            "http://localhost:5195/api/serviceusers",
-            newServiceUser);
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             newServiceUser = new CreateServiceUserDto();
             await LoadServiceUsers();
@@ -160,20 +150,5 @@ else
     private void ClearSearch()
     {
         searchText = string.Empty;
-    }
-
-    public class ServiceUserDto
-    {
-        public Guid Id { get; set; }
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; }
-    }
-
-    public class CreateServiceUserDto
-    {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; } = DateTime.Today;
     }
 }

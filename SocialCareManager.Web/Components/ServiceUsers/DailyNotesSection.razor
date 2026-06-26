@@ -1,80 +1,117 @@
-@using System.Net.Http.Json
-@using System.Net.Http.Headers
-@using SocialCareManager.Web.Services
-@inject HttpClient Http
+@using SocialCareManager.Web.Dtos.DailyNotes
+@using SocialCareManager.Web.Services.Api
 @inject IJSRuntime JS
-@inject AuthService AuthService
+@inject DailyNoteService DailyNoteService
 
-<h4>Daily notes</h4>
+<div class="section-card mb-4">
+    <div class="section-card-header">
+        <i class="bi bi-journal-text"></i>
+        <h3>Daily Notes</h3>
+    </div>
 
-<input class="form-control mb-2" placeholder="Title" @bind="newNote.Title" />
-<textarea class="form-control mb-2" placeholder="Content" @bind="newNote.Content"></textarea>
+    <input class="form-control mb-2" placeholder="Title" @bind="newNote.Title" />
+    <textarea class="form-control mb-3" rows="3" placeholder="Content" @bind="newNote.Content"></textarea>
 
-<button class="btn btn-primary mb-3" @onclick="CreateNote">
-    Add Daily Note
-</button>
+    <button class="btn btn-primary" @onclick="CreateNote">
+        <i class="bi bi-plus-circle me-1"></i>
+        Add Daily Note
+    </button>
+</div>
 
 @if (dailyNotes is null)
 {
-    <p>Loading notes...</p>
+    <div class="section-card">
+        <p class="mb-0">Loading notes...</p>
+    </div>
 }
 else if (dailyNotes.Count == 0)
 {
-    <p>No daily notes found.</p>
+    <div class="section-card">
+        <p class="mb-0 text-muted">No daily notes found.</p>
+    </div>
 }
 else
 {
-    <ul>
+    <div class="notes-list">
         @foreach (var note in dailyNotes)
         {
-            <li class="mb-3">
+            <div class="note-card">
                 @if (editingNoteId == note.Id)
                 {
-                    <input class="form-control mb-2" @bind="editNote.Title" />
-                    <textarea class="form-control mb-2" @bind="editNote.Content"></textarea>
+                    <div class="section-card-header">
+                        <i class="bi bi-pencil-square"></i>
+                        <h3>Edit daily note</h3>
+                    </div>
 
-                    <button class="btn btn-primary btn-sm me-2" @onclick="SaveNote">Save</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEditNote">Cancel</button>
+                    <input class="form-control mb-2" @bind="editNote.Title" />
+                    <textarea class="form-control mb-3" rows="3" @bind="editNote.Content"></textarea>
+
+                    <button class="btn btn-primary btn-sm me-2" @onclick="SaveNote">
+                        Save
+                    </button>
+
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEditNote">
+                        Cancel
+                    </button>
                 }
                 else
                 {
-                    <strong>@note.Title</strong><br />
+                    <div class="note-card-header">
+                        <div>
+                            <h4>@note.Title</h4>
 
-                    <small class="text-muted">
-                        Created: @note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
-                    </small>
-                    <br />
+                            <div class="note-meta">
+                                <i class="bi bi-clock me-1"></i>
+                                @note.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
 
-                    <small class="text-muted">
-                        Created by: @note.CreatedBy
-                    </small>
+                                @if (!string.IsNullOrWhiteSpace(note.CreatedBy))
+                                {
+                                    <span class="mx-2">•</span>
+                                    <i class="bi bi-person me-1"></i>
+                                    @note.CreatedBy
+                                }
+                            </div>
+                        </div>
+                    </div>
 
-                    @if (note.UpdatedAt is not null)
+                    <p class="note-content">
+                        @note.Content
+                    </p>
+
+                    @if (note.UpdatedAt is not null || !string.IsNullOrWhiteSpace(note.UpdatedBy))
                     {
-                        <br />
-                        <small class="text-muted">
-                            Updated: @note.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
-                        </small>
+                        <div class="note-updated">
+                            Updated
+
+                            @if (note.UpdatedAt is not null)
+                            {
+                                <span>
+                                    @note.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(note.UpdatedBy))
+                            {
+                                <span>by @note.UpdatedBy</span>
+                            }
+                        </div>
                     }
 
-                    @if (!string.IsNullOrWhiteSpace(note.UpdatedBy))
-                    {
-                        <br />
-                        <small class="text-muted">
-                            Updated by: @note.UpdatedBy
-                        </small>
-                    }
+                    <div class="note-actions">
+                        <button class="btn btn-secondary btn-sm me-2" @onclick="() => StartEditNote(note)">
+                            <i class="bi bi-pencil-square me-1"></i>
+                            Edit
+                        </button>
 
-                    <br />
-                    @note.Content
-                    <br />
-
-                    <button class="btn btn-secondary btn-sm mt-2 me-2" @onclick="() => StartEditNote(note)">Edit</button>
-                    <button class="btn btn-danger btn-sm mt-2" @onclick="() => DeleteNote(note.Id)">Delete</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteNote(note.Id)">
+                            <i class="bi bi-trash3-fill me-1"></i>
+                            Delete
+                        </button>
+                    </div>
                 }
-            </li>
+            </div>
         }
-    </ul>
+    </div>
 }
 
 @code {
@@ -91,33 +128,16 @@ else
         await LoadNotes();
     }
 
-    private void SetAuthorizationHeader()
-    {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
-    }
-
     private async Task LoadNotes()
     {
-        SetAuthorizationHeader();
-
-        dailyNotes = await Http.GetFromJsonAsync<List<DailyNoteDto>>(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes");
-
-        dailyNotes = dailyNotes?
-            .OrderByDescending(x => x.CreatedAt)
-            .ToList();
+        dailyNotes = await DailyNoteService.GetAllAsync(ServiceUserId);
     }
 
     private async Task CreateNote()
     {
-        SetAuthorizationHeader();
+        var success = await DailyNoteService.CreateAsync(ServiceUserId, newNote);
 
-        var response = await Http.PostAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes",
-            newNote);
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             newNote = new CreateDailyNoteDto();
             await LoadNotes();
@@ -146,13 +166,12 @@ else
         if (editingNoteId is null)
             return;
 
-        SetAuthorizationHeader();
-
-        var response = await Http.PutAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes/{editingNoteId}",
+        var success = await DailyNoteService.UpdateAsync(
+            ServiceUserId,
+            editingNoteId.Value,
             editNote);
 
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             editingNoteId = null;
             editNote = new EditDailyNoteDto();
@@ -169,38 +188,11 @@ else
         if (!confirmed)
             return;
 
-        SetAuthorizationHeader();
+        var success = await DailyNoteService.DeleteAsync(ServiceUserId, noteId);
 
-        var response = await Http.DeleteAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/dailynotes/{noteId}");
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             await LoadNotes();
         }
-    }
-
-    public class DailyNoteDto
-    {
-        public Guid Id { get; set; }
-        public Guid ServiceUserId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string CreatedBy { get; set; } = string.Empty;
-        public string? UpdatedBy { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
-
-    public class CreateDailyNoteDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-    }
-
-    public class EditDailyNoteDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
     }
 }

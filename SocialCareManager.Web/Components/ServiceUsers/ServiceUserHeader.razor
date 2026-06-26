@@ -1,3 +1,4 @@
+@using SocialCareManager.Web.Dtos
 @using System.Net.Http.Json
 @using System.Net.Http.Headers
 @using SocialCareManager.Web.Services
@@ -7,37 +8,88 @@
 
 @if (serviceUser is null)
 {
-    <p>Loading service user...</p>
+    <div class="section-card mb-4">
+        <p class="mb-0">Loading service user...</p>
+    </div>
 }
 else
 {
-    <h3>@serviceUser.FirstName @serviceUser.LastName</h3>
-    <p><strong>Date of birth:</strong> @serviceUser.DateOfBirth.ToShortDateString()</p>
+    <div class="profile-card mb-4">
+        <div class="profile-main">
+            <div class="profile-avatar">
+                <i class="bi bi-person-fill"></i>
+            </div>
 
-    @if (!isEditing)
-    {
-        <button class="btn btn-secondary mb-3" @onclick="StartEdit">
-            Edit user
-        </button>
+            <div>
+                <h2 class="profile-name">
+                    @serviceUser.FirstName @serviceUser.LastName
+                </h2>
 
-        @if (AuthService.IsAdmin)
+                <div class="profile-subtitle">
+                    Service user profile
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-details">
+            <div class="profile-detail">
+                <span>Date of birth</span>
+                <strong>@serviceUser.DateOfBirth.ToShortDateString()</strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>Age</span>
+                <strong>@CalculateAge(serviceUser.DateOfBirth)</strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>Status</span>
+                <strong class="status-active">
+                    <i class="bi bi-circle-fill"></i>
+                    Active
+                </strong>
+            </div>
+        </div>
+
+        @if (!isEditing)
         {
-            <button class="btn btn-danger mb-3 ms-2" @onclick="DeleteUser">
-                Delete user
-            </button>
+            <div class="profile-actions">
+                <button class="btn btn-secondary" @onclick="StartEdit">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit user
+                </button>
+
+                @if (AuthService.IsAdmin)
+                {
+                    <button class="btn btn-danger ms-2" @onclick="DeleteUser">
+                        <i class="bi bi-trash3-fill me-1"></i>
+                        Delete user
+                    </button>
+                }
+            </div>
         }
-    }
-    else
-    {
-        <h4>Edit service user</h4>
+        else
+        {
+            <div class="profile-edit mt-4">
+                <div class="section-card-header">
+                    <i class="bi bi-pencil-square"></i>
+                    <h3>Edit service user</h3>
+                </div>
 
-        <input class="form-control mb-2" @bind="editServiceUser.FirstName" />
-        <input class="form-control mb-2" @bind="editServiceUser.LastName" />
-        <input type="date" class="form-control mb-2" @bind="editServiceUser.DateOfBirth" />
+                <input class="form-control mb-2" @bind="editServiceUser.FirstName" />
+                <input class="form-control mb-2" @bind="editServiceUser.LastName" />
+                <input type="date" class="form-control mb-3" @bind="editServiceUser.DateOfBirth" />
 
-        <button class="btn btn-primary me-2" @onclick="SaveUser">Save</button>
-        <button class="btn btn-outline-secondary" @onclick="CancelEdit">Cancel</button>
-    }
+                <button class="btn btn-primary me-2" @onclick="SaveUser">
+                    Save
+                </button>
+
+                <button class="btn btn-outline-secondary" @onclick="CancelEdit">
+                    Cancel
+                </button>
+            </div>
+        }
+    </div>
 }
 
 @code {
@@ -115,18 +167,17 @@ else
         }
     }
 
-    private class ServiceUserDto
+    private static int CalculateAge(DateTime dateOfBirth)
     {
-        public Guid Id { get; set; }
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; }
+        var today = DateTime.Today;
+        var age = today.Year - dateOfBirth.Year;
+
+        if (dateOfBirth.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        return age;
     }
 
-    private class EditServiceUserDto
-    {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public DateTime DateOfBirth { get; set; }
-    }
 }

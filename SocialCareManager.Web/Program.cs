@@ -1,10 +1,13 @@
 using SocialCareManager.Web.Services;
 using SocialCareManager.Web.Components;
+using SocialCareManager.Web.Services.Api;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AuthService>();
-
+builder.Services.AddScoped<ServiceUserService>();
+builder.Services.AddScoped<DailyNoteService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

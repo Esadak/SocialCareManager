@@ -5,21 +5,30 @@
 @inject NavigationManager Navigation
 @inject AuthService AuthService
 
-<h1>Service user details</h1>
-
 @if (!AuthService.IsLoggedIn)
 {
     <p>Redirecting to login...</p>
 }
 else
 {
+    <div class="page-header">
+        <div class="page-title">
+            <i class="bi bi-person-vcard-fill"></i>
+            <h1>Service User Details</h1>
+        </div>
+
+        <div class="page-subtitle">
+            View care records, daily notes and next of kin information.
+        </div>
+    </div>
+
     <ServiceUserHeader ServiceUserId="Id" />
 
-    <hr />
+    <div class="my-4"></div>
 
     <DailyNotesSection ServiceUserId="Id" />
 
-    <hr />
+    <div class="my-4"></div>
 
     <NextOfKinSection ServiceUserId="Id" />
 }
