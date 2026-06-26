@@ -64,4 +64,10 @@ public class DailyNoteService
 
         return response.IsSuccessStatusCode;
     }
+
+    public async Task<int> GetCountAsync(Guid serviceUserId)
+{
+    var notes = await GetAllAsync(serviceUserId);
+    return notes?.Count ?? 0;
+}
 }

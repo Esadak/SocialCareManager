@@ -299,3 +299,87 @@ h1:focus {
     padding-top: 1rem;
     border-top: 1px solid #e5e7eb;
 }
+.record-tabs {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: .6rem;
+    box-shadow: 0 10px 25px rgba(15,23,42,.04);
+}
+
+.record-tab {
+    border: none;
+    background: transparent;
+    color: #475569;
+    padding: .7rem 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    transition: all .15s ease;
+}
+
+.record-tab:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.record-tab.active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.record-tab.disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: .7;
+}
+
+/* profile */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.overview-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 1.25rem;
+    box-shadow: 0 10px 25px rgba(15,23,42,.04);
+}
+
+.overview-card.muted {
+    opacity: .65;
+}
+
+.overview-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.overview-label {
+    color: #64748b;
+    font-size: .85rem;
+}
+
+.overview-value {
+    color: #0f172a;
+    font-weight: 700;
+    margin-top: .25rem;
+}

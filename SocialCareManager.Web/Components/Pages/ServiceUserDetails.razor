@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @using SocialCareManager.Web.Services
 @using SocialCareManager.Web.Components.ServiceUsers
+@using SocialCareManager.Web.Services.Api
+@inject DailyNoteService DailyNoteService
 @inject NavigationManager Navigation
 @inject AuthService AuthService
 
@@ -24,24 +26,137 @@ else
 
     <ServiceUserHeader ServiceUserId="Id" />
 
-    <div class="my-4"></div>
+    <div class="record-tabs mb-4">
+        <button class="record-tab @(activeTab == "profile" ? "active" : "")"
+                @onclick="@(() => SetActiveTab("profile"))">
+            <i class="bi bi-person-fill"></i>
+            Profile
+        </button>
 
-    <DailyNotesSection ServiceUserId="Id" />
+        <button class="record-tab @(activeTab == "careplan" ? "active" : "")"
+                @onclick="@(() => SetActiveTab("careplan"))">
+            <i class="bi bi-clipboard2-check-fill"></i>
+            Care Plan
+        </button>
 
-    <div class="my-4"></div>
+        <button class="record-tab @(activeTab == "notes" ? "active" : "")"
+                @onclick="@(() => SetActiveTab("notes"))">
+            <i class="bi bi-journal-text"></i>
+            Daily Notes
+        </button>
 
-    <NextOfKinSection ServiceUserId="Id" />
+        <button class="record-tab @(activeTab == "nextofkin" ? "active" : "")"
+                @onclick="@(() => SetActiveTab("nextofkin"))">
+            <i class="bi bi-person-hearts"></i>
+            Next of Kin
+        </button>
+
+        <button class="record-tab disabled" disabled>
+            <i class="bi bi-capsule"></i>
+            Medication
+        </button>
+
+        <button class="record-tab disabled" disabled>
+            <i class="bi bi-calendar-event"></i>
+            Calendar
+        </button>
+
+        <button class="record-tab disabled" disabled>
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Incidents
+        </button>
+    </div>
+
+    @if (activeTab == "profile")
+    {
+        <div class="overview-grid">
+
+    <div class="overview-card">
+        <div class="overview-icon">
+            <i class="bi bi-clipboard2-check-fill"></i>
+        </div>
+        <div>
+            <div class="overview-label">Care Plan</div>
+            <div class="overview-value">Not started</div>
+        </div>
+    </div>
+
+    <div class="overview-card">
+        <div class="overview-icon">
+            <i class="bi bi-journal-text"></i>
+        </div>
+        <div>
+            <div class="overview-label">Daily Notes</div>
+            <div class="overview-value">@dailyNoteCount notes</div>
+        </div>
+    </div>
+
+    <div class="overview-card">
+        <div class="overview-icon">
+            <i class="bi bi-person-hearts"></i>
+        </div>
+        <div>
+            <div class="overview-label">Next of Kin</div>
+            <div class="overview-value">View contacts tab</div>
+        </div>
+    </div>
+
+    <div class="overview-card muted">
+        <div class="overview-icon">
+            <i class="bi bi-capsule"></i>
+        </div>
+        <div>
+            <div class="overview-label">Medication</div>
+            <div class="overview-value">Coming later</div>
+        </div>
+    </div>
+
+</div>
+    }
+    else if (activeTab == "careplan")
+    {
+        <div class="section-card">
+            <div class="section-card-header">
+                <i class="bi bi-clipboard2-check-fill"></i>
+                <h3>Care Plan</h3>
+            </div>
+
+            <p class="text-muted mb-0">
+                Care Plan module will be implemented next.
+            </p>
+        </div>
+    }
+    else if (activeTab == "notes")
+    {
+        <DailyNotesSection ServiceUserId="Id" />
+    }
+    else if (activeTab == "nextofkin")
+    {
+        <NextOfKinSection ServiceUserId="Id" />
+    }
 }
 
 @code {
     [Parameter]
     public Guid Id { get; set; }
 
-    protected override void OnInitialized()
+    private string activeTab = "profile";
+
+   private int dailyNoteCount;
+
+protected override async Task OnInitializedAsync()
+{
+    if (!AuthService.IsLoggedIn)
     {
-        if (!AuthService.IsLoggedIn)
-        {
-            Navigation.NavigateTo("/login");
-        }
+        Navigation.NavigateTo("/login");
+        return;
+    }
+
+    dailyNoteCount = await DailyNoteService.GetCountAsync(Id);
+}
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
     }
 }
