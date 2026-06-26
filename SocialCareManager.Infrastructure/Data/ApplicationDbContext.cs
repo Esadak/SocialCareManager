@@ -17,4 +17,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<DailyNote> DailyNotes => Set<DailyNote>();
     public DbSet<NextOfKin> NextOfKin => Set<NextOfKin>();
+
+    public DbSet<CarePlan> CarePlans => Set<CarePlan>();
 }

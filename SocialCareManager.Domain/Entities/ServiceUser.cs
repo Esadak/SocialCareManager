@@ -14,4 +14,7 @@ public class ServiceUser  : BaseEntity
         = new List<DailyNote>();
     public ICollection<NextOfKin> NextOfKin { get; set; }
     = new List<NextOfKin>();
+
+    public ICollection<CarePlan> CarePlans { get; set; } = 
+    new List<CarePlan>();
 }
