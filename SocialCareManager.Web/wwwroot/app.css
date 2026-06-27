@@ -383,3 +383,31 @@ h1:focus {
     font-weight: 700;
     margin-top: .25rem;
 }
+
+.review-status {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+.review-status.success {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.review-status.warning {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.review-status.danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
