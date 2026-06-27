@@ -12,6 +12,7 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddScoped<ServiceUserService>();
 builder.Services.AddScoped<DailyNoteService>();
 builder.Services.AddScoped<NextOfKinService>();
+builder.Services.AddScoped<CarePlanService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

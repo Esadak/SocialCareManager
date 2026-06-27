@@ -1,0 +1,126 @@
+@using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Services.Api
+@inject CarePlanService CarePlanService
+
+@if (carePlan is null && !isCreating)
+{
+    <div class="section-card">
+        <div class="section-card-header">
+            <i class="bi bi-clipboard2-check-fill"></i>
+            <h3>Care Plan</h3>
+        </div>
+
+        <p class="text-muted">
+            No active care plan has been created for this service user yet.
+        </p>
+
+        <button class="btn btn-primary" @onclick="StartCreate">
+            <i class="bi bi-plus-circle me-1"></i>
+            Create Care Plan
+        </button>
+    </div>
+}
+else if (isCreating)
+{
+    <div class="section-card">
+        <div class="section-card-header">
+            <i class="bi bi-plus-circle"></i>
+            <h3>Create Care Plan</h3>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Goal</label>
+            <textarea class="form-control" rows="3" @bind="newCarePlan.Goal"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Needs</label>
+            <textarea class="form-control" rows="3" @bind="newCarePlan.Needs"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Support Plan</label>
+            <textarea class="form-control" rows="3" @bind="newCarePlan.SupportPlan"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Risk Assessment</label>
+            <textarea class="form-control" rows="3" @bind="newCarePlan.RiskAssessment"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Review Date</label>
+            <input type="date" class="form-control" @bind="newCarePlan.ReviewDate" />
+        </div>
+
+        <button class="btn btn-primary me-2" @onclick="CreateCarePlan">
+            Save Care Plan
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="CancelCreate">
+            Cancel
+        </button>
+    </div>
+}
+else if (carePlan is not null)
+{
+    <div class="section-card">
+        <div class="section-card-header">
+            <i class="bi bi-clipboard2-check-fill"></i>
+            <h3>Care Plan</h3>
+        </div>
+
+        <div class="mb-3">
+            <span class="badge bg-success">Active</span>
+        </div>
+
+        <p><strong>Goal:</strong><br />@carePlan.Goal</p>
+        <p><strong>Needs:</strong><br />@carePlan.Needs</p>
+        <p><strong>Support Plan:</strong><br />@carePlan.SupportPlan</p>
+        <p><strong>Risk Assessment:</strong><br />@carePlan.RiskAssessment</p>
+        <p><strong>Review Date:</strong><br />@carePlan.ReviewDate.ToShortDateString()</p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private CarePlanDto? carePlan;
+    private CreateCarePlanDto newCarePlan = new();
+    private bool isCreating;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCarePlan();
+    }
+
+    private async Task LoadCarePlan()
+    {
+        carePlan = await CarePlanService.GetActiveAsync(ServiceUserId);
+    }
+
+    private void StartCreate()
+    {
+        newCarePlan = new CreateCarePlanDto();
+        isCreating = true;
+    }
+
+    private void CancelCreate()
+    {
+        isCreating = false;
+        newCarePlan = new CreateCarePlanDto();
+    }
+
+    private async Task CreateCarePlan()
+    {
+        var success = await CarePlanService.CreateAsync(ServiceUserId, newCarePlan);
+
+        if (success)
+        {
+            isCreating = false;
+            newCarePlan = new CreateCarePlanDto();
+            await LoadCarePlan();
+        }
+    }
+}

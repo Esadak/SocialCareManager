@@ -1,3 +1,4 @@
+using SocialCareManager.Api.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -46,8 +47,8 @@ public class CarePlansController : ControllerBase
 
     [HttpPost]
     public async Task<ActionResult<CarePlan>> Create(
-        Guid serviceUserId,
-        CarePlan carePlan)
+    Guid serviceUserId,
+    CreateCarePlanDto dto)
     {
         var serviceUserExists = await _context.ServiceUsers
             .AnyAsync(x => x.Id == serviceUserId);
@@ -55,7 +56,7 @@ public class CarePlansController : ControllerBase
         if (!serviceUserExists)
             return NotFound("Service user not found.");
 
-        if (carePlan.IsActive)
+        if (dto.IsActive)
         {
             var activePlans = await _context.CarePlans
                 .Where(x =>
@@ -71,10 +72,19 @@ public class CarePlansController : ControllerBase
             }
         }
 
-        carePlan.Id = Guid.NewGuid();
-        carePlan.ServiceUserId = serviceUserId;
-        carePlan.CreatedBy = GetCurrentUserName();
-        carePlan.UpdatedBy = null;
+        var carePlan = new CarePlan
+{
+    Id = Guid.NewGuid(),
+    ServiceUserId = serviceUserId,
+    Goal = dto.Goal,
+    Needs = dto.Needs,
+    SupportPlan = dto.SupportPlan,
+    RiskAssessment = dto.RiskAssessment,
+    ReviewDate = DateTime.SpecifyKind(dto.ReviewDate, DateTimeKind.Utc),
+    IsActive = dto.IsActive,
+    CreatedBy = GetCurrentUserName(),
+    UpdatedBy = null
+};
 
         _context.CarePlans.Add(carePlan);
 
