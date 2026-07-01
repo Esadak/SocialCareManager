@@ -1,33 +1,28 @@
+@using SocialCareManager.Web.Components.Common
 @using SocialCareManager.Web.Dtos
 @using SocialCareManager.Web.Services.Api
+
 @inject CarePlanService CarePlanService
 
 @if (carePlan is null && !isCreating)
 {
-    <div class="section-card">
-        <div class="section-card-header">
-            <i class="bi bi-clipboard2-check-fill"></i>
-            <h3>Care Plan</h3>
-        </div>
+    <SectionCard>
+        <SectionHeader Title="Care Plan" Icon="bi bi-clipboard2-check-fill" />
 
         <p class="text-muted">
             No active care plan has been created for this service user yet.
         </p>
-        
 
         <button class="btn btn-primary" @onclick="StartCreate">
             <i class="bi bi-plus-circle me-1"></i>
             Create Care Plan
         </button>
-    </div>
+    </SectionCard>
 }
 else if (isCreating)
 {
-    <div class="section-card">
-        <div class="section-card-header">
-            <i class="bi bi-plus-circle"></i>
-            <h3>Create Care Plan</h3>
-        </div>
+    <SectionCard>
+        <SectionHeader Title="Create Care Plan" Icon="bi bi-plus-circle" />
 
         <div class="mb-3">
             <label class="form-label">Goal</label>
@@ -61,38 +56,93 @@ else if (isCreating)
         <button class="btn btn-outline-secondary" @onclick="CancelCreate">
             Cancel
         </button>
-    </div>
+    </SectionCard>
 }
 else if (carePlan is not null)
 {
-    <div class="section-card">
+    <SectionCard>
+
         <div class="section-card-header">
             <i class="bi bi-clipboard2-check-fill"></i>
             <h3>Care Plan</h3>
         </div>
 
-        <div class="mb-3">
-            <span class="badge bg-success">Active</span>
-        </div>
-        <div class="@GetReviewStatusClass() mb-4">
-    <i class="bi bi-calendar-check me-2"></i>
-    <div>
-        <strong>@GetReviewStatusText()</strong>
-        <div class="text-muted small">
-            Next review: @carePlan.ReviewDate.ToShortDateString()
-        </div>
-    </div>
-</div>
+        <div class="care-plan-summary mb-4">
 
-        <p><strong>Goal:</strong><br />@carePlan.Goal</p>
-        <p><strong>Needs:</strong><br />@carePlan.Needs</p>
-        <p><strong>Support Plan:</strong><br />@carePlan.SupportPlan</p>
-        <p><strong>Risk Assessment:</strong><br />@carePlan.RiskAssessment</p>
-        <p><strong>Review Date:</strong><br />@carePlan.ReviewDate.ToShortDateString()</p>
-    </div>
+            <div class="care-plan-summary-item">
+                <span>Status</span>
+                <strong class="text-success">
+                    <i class="bi bi-circle-fill me-1"></i>
+                    Active
+                </strong>
+            </div>
+
+            <div class="care-plan-summary-item">
+                <span>Review</span>
+                <strong>@GetReviewStatusText()</strong>
+            </div>
+
+            <div class="care-plan-summary-item">
+                <span>Created by</span>
+                <strong>@(carePlan.CreatedBy ?? "Unknown")</strong>
+            </div>
+
+            <div class="care-plan-summary-item">
+                <span>Last updated</span>
+                <strong>
+                    @(carePlan.UpdatedAt is null
+                        ? "Not updated"
+                        : carePlan.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                </strong>
+            </div>
+
+        </div>
+
+        <div class="@GetReviewStatusClass() mb-4">
+            <i class="bi bi-calendar-check me-2"></i>
+
+            <div>
+                <strong>@GetReviewStatusText()</strong>
+
+                <div class="text-muted small">
+                    Next review: @carePlan.ReviewDate.ToShortDateString()
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-6">
+                <InfoCard Title="Goal" Icon="bi bi-bullseye">
+                    @carePlan.Goal
+                </InfoCard>
+            </div>
+
+            <div class="col-lg-6">
+                <InfoCard Title="Needs" Icon="bi bi-heart-fill">
+                    @carePlan.Needs
+                </InfoCard>
+            </div>
+
+            <div class="col-lg-6">
+                <InfoCard Title="Support Plan" Icon="bi bi-people-fill">
+                    @carePlan.SupportPlan
+                </InfoCard>
+            </div>
+
+            <div class="col-lg-6">
+                <InfoCard Title="Risk Assessment" Icon="bi bi-exclamation-triangle-fill">
+                    @carePlan.RiskAssessment
+                </InfoCard>
+            </div>
+
+        </div>
+
+    </SectionCard>
 }
 
 @code {
+
     [Parameter]
     public Guid ServiceUserId { get; set; }
 
@@ -130,42 +180,43 @@ else if (carePlan is not null)
         {
             isCreating = false;
             newCarePlan = new CreateCarePlanDto();
+
             await LoadCarePlan();
         }
     }
 
     private string GetReviewStatusText()
-{
-    if (carePlan is null)
-        return string.Empty;
+    {
+        if (carePlan is null)
+            return string.Empty;
 
-    var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
+        var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
 
-    if (daysRemaining < 0)
-        return $"Overdue by {Math.Abs(daysRemaining)} days";
+        if (daysRemaining < 0)
+            return $"Overdue by {Math.Abs(daysRemaining)} days";
 
-    if (daysRemaining == 0)
-        return "Review due today";
+        if (daysRemaining == 0)
+            return "Review due today";
 
-    if (daysRemaining <= 7)
-        return $"Review in {daysRemaining} days";
+        if (daysRemaining <= 7)
+            return $"Review in {daysRemaining} days";
 
-    return $"{daysRemaining} days remaining";
-}
+        return $"{daysRemaining} days remaining";
+    }
 
-private string GetReviewStatusClass()
-{
-    if (carePlan is null)
-        return "review-status";
+    private string GetReviewStatusClass()
+    {
+        if (carePlan is null)
+            return "review-status";
 
-    var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
+        var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
 
-    if (daysRemaining < 0)
-        return "review-status danger";
+        if (daysRemaining < 0)
+            return "review-status danger";
 
-    if (daysRemaining <= 7)
-        return "review-status warning";
+        if (daysRemaining <= 7)
+            return "review-status warning";
 
-    return "review-status success";
-}
+        return "review-status success";
+    }
 }

@@ -2,6 +2,7 @@
 @using System.Net.Http.Json
 @using System.Net.Http.Headers
 @using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Components.Common
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject AuthService AuthService
@@ -71,23 +72,24 @@ else
         else
         {
             <div class="profile-edit mt-4">
-                <div class="section-card-header">
-                    <i class="bi bi-pencil-square"></i>
-                    <h3>Edit service user</h3>
-                </div>
 
-                <input class="form-control mb-2" @bind="editServiceUser.FirstName" />
-                <input class="form-control mb-2" @bind="editServiceUser.LastName" />
-                <input type="date" class="form-control mb-3" @bind="editServiceUser.DateOfBirth" />
+    <SectionHeader
+        Title="Edit service user"
+        Icon="bi bi-pencil-square" />
 
-                <button class="btn btn-primary me-2" @onclick="SaveUser">
-                    Save
-                </button>
+    <input class="form-control mb-2" @bind="editServiceUser.FirstName" />
+    <input class="form-control mb-2" @bind="editServiceUser.LastName" />
+    <input type="date" class="form-control mb-3" @bind="editServiceUser.DateOfBirth" />
 
-                <button class="btn btn-outline-secondary" @onclick="CancelEdit">
-                    Cancel
-                </button>
-            </div>
+    <button class="btn btn-primary me-2" @onclick="SaveUser">
+        Save
+    </button>
+
+    <button class="btn btn-outline-secondary" @onclick="CancelEdit">
+        Cancel
+    </button>
+
+</div>
         }
     </div>
 }

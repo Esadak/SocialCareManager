@@ -1,6 +1,7 @@
 @using System.Net.Http.Json
 @using System.Net.Http.Headers
 @using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Components.Common
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject AuthService AuthService
@@ -28,7 +29,9 @@
 }
 else if (contacts.Count == 0)
 {
-    <p>No next of kin found.</p>
+    <SectionCard>
+    <SectionHeader Title="Next of Kin" Icon="bi bi-person-hearts" />
+     </SectionCard>
 }
 else
 {

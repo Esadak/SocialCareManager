@@ -1,0 +1,30 @@
+<div class="info-card">
+
+    <div class="info-card-header">
+
+        <i class="@Icon"></i>
+
+        <h4>@Title</h4>
+
+    </div>
+
+    <div class="info-card-body">
+
+        @ChildContent
+
+    </div>
+
+</div>
+
+@code{
+
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public string Icon { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+}
