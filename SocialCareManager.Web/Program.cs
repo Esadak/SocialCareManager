@@ -4,6 +4,7 @@ using SocialCareManager.Web.Services.Api;
 using SocialCareManager.Web.Configuration;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<ApiSettings>(
    builder.Configuration.GetSection("ApiSettings"));

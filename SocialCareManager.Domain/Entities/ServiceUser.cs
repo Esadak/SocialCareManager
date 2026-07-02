@@ -15,6 +15,8 @@ public class ServiceUser  : BaseEntity
     public ICollection<NextOfKin> NextOfKin { get; set; }
     = new List<NextOfKin>();
 
-    public ICollection<CarePlan> CarePlans { get; set; } = 
-    new List<CarePlan>();
+    public ICollection<CarePlan> CarePlans { get; set; } 
+    = new List<CarePlan>();
+    public ICollection<Medication> Medications { get; set; } 
+    = new List<Medication>();
 }

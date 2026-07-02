@@ -19,4 +19,5 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<NextOfKin> NextOfKin => Set<NextOfKin>();
 
     public DbSet<CarePlan> CarePlans => Set<CarePlan>();
+    public DbSet<Medication> Medications => Set<Medication>();
 }
