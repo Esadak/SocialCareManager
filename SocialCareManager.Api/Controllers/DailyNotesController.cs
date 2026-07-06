@@ -9,19 +9,17 @@ namespace SocialCareManager.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/serviceusers/{serviceUserId:guid}/dailynotes")]
-public class DailyNotesController : ControllerBase
+public class DailyNotesController : BaseApiController
 {
-    private readonly ApplicationDbContext _context;
-
     public DailyNotesController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    : base(context)
+{
+}
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DailyNote>>> GetAll(Guid serviceUserId)
     {
-        var notes = await _context.DailyNotes
+        var notes = await Context.DailyNotes
             .Where(x => x.ServiceUserId == serviceUserId)
             .ToListAsync();
 
@@ -33,7 +31,7 @@ public class DailyNotesController : ControllerBase
         Guid serviceUserId,
         DailyNote note)
     {
-        var serviceUserExists = await _context.ServiceUsers
+        var serviceUserExists = await Context.ServiceUsers
             .AnyAsync(x => x.Id == serviceUserId);
 
         if (!serviceUserExists)
@@ -44,9 +42,9 @@ public class DailyNotesController : ControllerBase
         note.CreatedBy = GetCurrentUserName();
         note.UpdatedBy = null;
 
-        _context.DailyNotes.Add(note);
+        Context.DailyNotes.Add(note);
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return CreatedAtAction(
             nameof(GetAll),
@@ -60,7 +58,7 @@ public class DailyNotesController : ControllerBase
         Guid noteId,
         DailyNote updatedNote)
     {
-        var note = await _context.DailyNotes
+        var note = await Context.DailyNotes
             .FirstOrDefaultAsync(x =>
                 x.Id == noteId &&
                 x.ServiceUserId == serviceUserId);
@@ -73,7 +71,7 @@ public class DailyNotesController : ControllerBase
         note.UpdatedAt = DateTime.UtcNow;
         note.UpdatedBy = GetCurrentUserName();
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -83,7 +81,7 @@ public class DailyNotesController : ControllerBase
         Guid serviceUserId,
         Guid noteId)
     {
-        var note = await _context.DailyNotes
+        var note = await Context.DailyNotes
             .FirstOrDefaultAsync(x =>
                 x.Id == noteId &&
                 x.ServiceUserId == serviceUserId);
@@ -91,30 +89,11 @@ public class DailyNotesController : ControllerBase
         if (note is null)
             return NotFound();
 
-        _context.DailyNotes.Remove(note);
+        note.MarkAsDeleted(GetCurrentUserName());
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    private string GetCurrentUserName()
-    {
-        var email = User.Identity?.Name;
-
-        if (string.IsNullOrWhiteSpace(email))
-            return "Unknown User";
-
-        var user = _context.Users
-            .FirstOrDefault(x => x.Email == email);
-
-        if (user is null)
-            return email;
-
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
-
-        return string.IsNullOrWhiteSpace(fullName)
-            ? email
-            : fullName;
-    }
 }

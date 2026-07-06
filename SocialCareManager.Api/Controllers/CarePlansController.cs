@@ -11,19 +11,17 @@ namespace SocialCareManager.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/serviceusers/{serviceUserId:guid}/careplans")]
-public class CarePlansController : ControllerBase
+public class XController : BaseApiController
 {
-    private readonly ApplicationDbContext _context;
-
-    public CarePlansController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public XController(ApplicationDbContext context)
+    : base(context)
+{
+}
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CarePlan>>> GetAll(Guid serviceUserId)
     {
-        var carePlans = await _context.CarePlans
+        var carePlans = await Context.CarePlans
             .Where(x => x.ServiceUserId == serviceUserId)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync();
@@ -34,7 +32,7 @@ public class CarePlansController : ControllerBase
     [HttpGet("active")]
     public async Task<ActionResult<CarePlan>> GetActive(Guid serviceUserId)
     {
-        var carePlan = await _context.CarePlans
+        var carePlan = await Context.CarePlans
             .FirstOrDefaultAsync(x =>
                 x.ServiceUserId == serviceUserId &&
                 x.IsActive);
@@ -50,7 +48,7 @@ public class CarePlansController : ControllerBase
     Guid serviceUserId,
     CreateCarePlanDto dto)
     {
-        var serviceUserExists = await _context.ServiceUsers
+        var serviceUserExists = await Context.ServiceUsers
             .AnyAsync(x => x.Id == serviceUserId);
 
         if (!serviceUserExists)
@@ -58,7 +56,7 @@ public class CarePlansController : ControllerBase
 
         if (dto.IsActive)
         {
-            var activePlans = await _context.CarePlans
+            var activePlans = await Context.CarePlans
                 .Where(x =>
                     x.ServiceUserId == serviceUserId &&
                     x.IsActive)
@@ -86,9 +84,9 @@ public class CarePlansController : ControllerBase
     UpdatedBy = null
 };
 
-        _context.CarePlans.Add(carePlan);
+        Context.CarePlans.Add(carePlan);
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return CreatedAtAction(
             nameof(GetAll),
@@ -102,7 +100,7 @@ public class CarePlansController : ControllerBase
         Guid carePlanId,
         CarePlan updatedCarePlan)
     {
-        var carePlan = await _context.CarePlans
+        var carePlan = await Context.CarePlans
             .FirstOrDefaultAsync(x =>
                 x.Id == carePlanId &&
                 x.ServiceUserId == serviceUserId);
@@ -112,7 +110,7 @@ public class CarePlansController : ControllerBase
 
         if (updatedCarePlan.IsActive)
         {
-            var otherActivePlans = await _context.CarePlans
+            var otherActivePlans = await Context.CarePlans
                 .Where(x =>
                     x.ServiceUserId == serviceUserId &&
                     x.Id != carePlanId &&
@@ -136,7 +134,7 @@ public class CarePlansController : ControllerBase
         carePlan.UpdatedAt = DateTime.UtcNow;
         carePlan.UpdatedBy = GetCurrentUserName();
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -146,7 +144,7 @@ public class CarePlansController : ControllerBase
         Guid serviceUserId,
         Guid carePlanId)
     {
-        var carePlan = await _context.CarePlans
+        var carePlan = await Context.CarePlans
             .FirstOrDefaultAsync(x =>
                 x.Id == carePlanId &&
                 x.ServiceUserId == serviceUserId);
@@ -154,30 +152,12 @@ public class CarePlansController : ControllerBase
         if (carePlan is null)
             return NotFound();
 
-        _context.CarePlans.Remove(carePlan);
+        Context.CarePlans.Remove(carePlan);
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    private string GetCurrentUserName()
-    {
-        var email = User.Identity?.Name;
-
-        if (string.IsNullOrWhiteSpace(email))
-            return "Unknown User";
-
-        var user = _context.Users
-            .FirstOrDefault(x => x.Email == email);
-
-        if (user is null)
-            return email;
-
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
-
-        return string.IsNullOrWhiteSpace(fullName)
-            ? email
-            : fullName;
-    }
+  
 }

@@ -10,7 +10,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options)
         : base(options)
-    {
+    { 
     }
 
     public DbSet<ServiceUser> ServiceUsers => Set<ServiceUser>();
@@ -20,4 +20,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<CarePlan> CarePlans => Set<CarePlan>();
     public DbSet<Medication> Medications => Set<Medication>();
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<ServiceUser>()
+        .HasQueryFilter(x => !x.IsDeleted);
+
+    modelBuilder.Entity<DailyNote>()
+        .HasQueryFilter(x => !x.IsDeleted);
+
+    modelBuilder.Entity<NextOfKin>()
+        .HasQueryFilter(x => !x.IsDeleted);
+
+    modelBuilder.Entity<CarePlan>()
+        .HasQueryFilter(x => !x.IsDeleted);
+
+    modelBuilder.Entity<Medication>()
+        .HasQueryFilter(x => !x.IsDeleted);
+}
 }

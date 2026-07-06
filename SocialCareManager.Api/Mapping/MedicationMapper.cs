@@ -70,4 +70,29 @@ public static class MedicationMapper
         UpdatedBy = null
     };
 }
+
+public static void UpdateFromDto(
+    this Medication medication,
+    EditMedicationDto dto,
+    string updatedBy)
+{
+    medication.Name = dto.Name;
+    medication.Strength = dto.Strength;
+    medication.Dosage = dto.Dosage;
+    medication.Route = dto.Route;
+    medication.Frequency = dto.Frequency;
+    medication.AdministrationTimes = dto.AdministrationTimes;
+
+    medication.StartDate = dto.StartDate;
+    medication.EndDate = dto.EndDate;
+
+    medication.Prescriber = dto.Prescriber;
+    medication.Instructions = dto.Instructions;
+    medication.IsPrn = dto.IsPrn;
+    medication.Reason = dto.Reason;
+    medication.IsActive = dto.IsActive;
+
+    medication.UpdatedAt = DateTime.UtcNow;
+    medication.UpdatedBy = updatedBy;
+}
 }

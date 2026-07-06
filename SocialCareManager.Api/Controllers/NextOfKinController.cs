@@ -9,19 +9,17 @@ namespace SocialCareManager.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/serviceusers/{serviceUserId:guid}/nextofkin")]
-public class NextOfKinController : ControllerBase
+public class NextOfKinController : BaseApiController
 {
-    private readonly ApplicationDbContext _context;
-
     public NextOfKinController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    : base(context)
+{
+}
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<NextOfKin>>> GetAll(Guid serviceUserId)
     {
-        var contacts = await _context.NextOfKin
+        var contacts = await Context.NextOfKin
             .Where(x => x.ServiceUserId == serviceUserId)
             .ToListAsync();
 
@@ -33,7 +31,7 @@ public class NextOfKinController : ControllerBase
         Guid serviceUserId,
         NextOfKin contact)
     {
-        var serviceUserExists = await _context.ServiceUsers
+        var serviceUserExists = await Context.ServiceUsers
             .AnyAsync(x => x.Id == serviceUserId);
 
         if (!serviceUserExists)
@@ -42,9 +40,9 @@ public class NextOfKinController : ControllerBase
         contact.Id = Guid.NewGuid();
         contact.ServiceUserId = serviceUserId;
 
-        _context.NextOfKin.Add(contact);
+        Context.NextOfKin.Add(contact);
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return CreatedAtAction(
             nameof(GetAll),
@@ -58,7 +56,7 @@ public class NextOfKinController : ControllerBase
         Guid contactId,
         NextOfKin updatedContact)
     {
-        var contact = await _context.NextOfKin
+        var contact = await Context.NextOfKin
             .FirstOrDefaultAsync(x =>
                 x.Id == contactId &&
                 x.ServiceUserId == serviceUserId);
@@ -74,7 +72,7 @@ public class NextOfKinController : ControllerBase
         contact.IsEmergencyContact = updatedContact.IsEmergencyContact;
         contact.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -85,7 +83,7 @@ public class NextOfKinController : ControllerBase
         Guid serviceUserId,
         Guid contactId)
     {
-        var contact = await _context.NextOfKin
+        var contact = await Context.NextOfKin
             .FirstOrDefaultAsync(x =>
                 x.Id == contactId &&
                 x.ServiceUserId == serviceUserId);
@@ -93,10 +91,11 @@ public class NextOfKinController : ControllerBase
         if (contact is null)
             return NotFound();
 
-        _context.NextOfKin.Remove(contact);
+        contact.MarkAsDeleted(GetCurrentUserName());
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
 
-        return NoContent();
+return NoContent();
     }
+
 }

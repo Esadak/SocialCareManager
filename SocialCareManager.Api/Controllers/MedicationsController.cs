@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SocialCareManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using SocialCareManager.Api.Dtos.Medication;
 using SocialCareManager.Api.Mapping;
 using SocialCareManager.Api.Validation;
+using SocialCareManager.Infrastructure.Data;
 using SocialCareManager.Web.Dtos;
 
 namespace SocialCareManager.Api.Controllers;
@@ -12,23 +12,22 @@ namespace SocialCareManager.Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/serviceusers/{serviceUserId:guid}/medications")]
-public class MedicationsController : ControllerBase
+public class MedicationsController : BaseApiController
 {
-    private readonly ApplicationDbContext _context;
     private readonly MedicationValidator _validator;
 
     public MedicationsController(
-    ApplicationDbContext context,
-    MedicationValidator validator)
-{
-    _context = context;
-    _validator = validator;
-}
+        ApplicationDbContext context,
+        MedicationValidator validator)
+        : base(context)
+    {
+        _validator = validator;
+    }
 
    [HttpGet]
 public async Task<ActionResult<IEnumerable<MedicationDto>>> GetAll(Guid serviceUserId)
 {
-    var medications = await _context.Medications
+    var medications = await Context.Medications
         .Where(x => x.ServiceUserId == serviceUserId)
         .OrderBy(x => x.Name)
         .ToListAsync();
@@ -43,7 +42,7 @@ public async Task<ActionResult<MedicationDto>> GetById(
     Guid serviceUserId,
     Guid id)
 {
-    var medication = await _context.Medications
+    var medication = await Context.Medications
         .FirstOrDefaultAsync(x =>
             x.ServiceUserId == serviceUserId &&
             x.Id == id);
@@ -59,7 +58,7 @@ public async Task<ActionResult<MedicationDto>> Create(
     Guid serviceUserId,
     CreateMedicationDto dto)
 {
-    var serviceUserExists = await _context.ServiceUsers
+    var serviceUserExists = await Context.ServiceUsers
         .AnyAsync(x => x.Id == serviceUserId);
 
     if (!serviceUserExists)
@@ -74,32 +73,45 @@ public async Task<ActionResult<MedicationDto>> Create(
         serviceUserId,
         GetCurrentUserName());
 
-    _context.Medications.Add(medication);
+    Context.Medications.Add(medication);
 
-    await _context.SaveChangesAsync();
+    await Context.SaveChangesAsync();
 
     return CreatedAtAction(
         nameof(GetById),
         new { serviceUserId, id = medication.Id },
         medication.ToDto());
 }
-private string GetCurrentUserName()
+
+[HttpPut("{id:guid}")]
+public async Task<IActionResult> Update(
+    Guid serviceUserId,
+    Guid id,
+    EditMedicationDto dto)
 {
-    var email = User.Identity?.Name;
+    var medication = await Context.Medications
+        .FirstOrDefaultAsync(x =>
+            x.ServiceUserId == serviceUserId &&
+            x.Id == id);
 
-    if (string.IsNullOrWhiteSpace(email))
-        return "Unknown User";
+    if (medication is null)
+        return NotFound();
 
-    var user = _context.Users
-        .FirstOrDefault(x => x.Email == email);
+    var validationErrors = await _validator.ValidateUpdateAsync(
+        serviceUserId,
+        id,
+        dto);
 
-    if (user is null)
-        return email;
+    if (validationErrors.Count > 0)
+        return BadRequest(validationErrors);
 
-    var fullName = $"{user.FirstName} {user.LastName}".Trim();
+    medication.UpdateFromDto(
+        dto,
+        GetCurrentUserName());
 
-    return string.IsNullOrWhiteSpace(fullName)
-        ? email
-        : fullName;
+    await Context.SaveChangesAsync();
+
+    return NoContent();
 }
+
 }
