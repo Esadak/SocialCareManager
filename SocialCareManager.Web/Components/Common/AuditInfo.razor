@@ -1,0 +1,65 @@
+<div class="border rounded-3 p-3 mt-3 bg-light">
+    <div class="fw-semibold mb-2">
+        <i class="bi bi-clock-history"></i>
+        Record information
+    </div>
+
+    <div class="row small text-muted">
+        <div class="col-md-6 mb-2">
+            <div>Created</div>
+            <strong class="text-dark">@FormatDate(CreatedAt)</strong>
+        </div>
+
+        <div class="col-md-6 mb-2">
+            <div>Created by</div>
+            <strong class="text-dark">@DisplayUser(CreatedBy)</strong>
+        </div>
+
+        <div class="col-md-6 mb-2">
+            <div>Last updated</div>
+            <strong class="text-dark">@FormatDate(UpdatedAt)</strong>
+        </div>
+
+        <div class="col-md-6 mb-2">
+            <div>Updated by</div>
+            <strong class="text-dark">@DisplayUser(UpdatedBy)</strong>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public DateTime CreatedAt { get; set; }
+
+    [Parameter]
+    public string? CreatedBy { get; set; }
+
+    [Parameter]
+    public DateTime? UpdatedAt { get; set; }
+
+    [Parameter]
+    public string? UpdatedBy { get; set; }
+
+    private string FormatDate(DateTime date)
+    {
+        if (date == default)
+            return "Not available";
+
+        return date.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private string FormatDate(DateTime? date)
+    {
+        if (!date.HasValue)
+            return "Not updated";
+
+        return date.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private string DisplayUser(string? user)
+    {
+        return string.IsNullOrWhiteSpace(user)
+            ? "System"
+            : user;
+    }
+}

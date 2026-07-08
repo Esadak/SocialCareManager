@@ -1,3 +1,4 @@
+@using SocialCareManager.Web.Components.Common
 @using SocialCareManager.Web.Services.Api
 @using SocialCareManager.Web.Dtos
 @using SocialCareManager.Web.Services
@@ -5,17 +6,21 @@
 @inject MedicationService MedicationService
 
 <div class="section-card">
-    <div class="section-header">
-        <div>
-            <h3><i class="bi bi-capsule"></i> Medication</h3>
-            <p>Manage medicines for this person.</p>
-        </div>
+    <ActionToolbar
+        Title="Medication"
+        Subtitle="Manage medicines for this person.">
 
-        <button class="btn btn-primary" @onclick="ToggleCreateForm">
-            <i class="bi bi-plus-circle"></i>
-            Add Medication
-        </button>
-    </div>
+        <Actions>
+            @if (medications.Count > 0)
+            {
+                <button class="btn btn-primary" @onclick="ToggleCreateForm">
+                    <i class="bi bi-plus-circle"></i>
+                    Add Medication
+                </button>
+            }
+        </Actions>
+
+    </ActionToolbar>
 
     @if (showCreateForm)
     {
@@ -38,30 +43,22 @@
     else
     {
         <MedicationList Medications="medications"
-                CanDelete="AuthService.IsAdmin"
-                OnEdit="StartEdit"
-                OnDelete="ConfirmDelete" />
+                        CanDelete="AuthService.IsAdmin"
+                        OnAdd="ToggleCreateForm"
+                        OnEdit="StartEdit"
+                        OnDelete="ConfirmDelete" />
     }
 
-    @if (medicationToDelete is not null)
-{
-    <div class="alert alert-warning mt-3">
-        <strong>Delete medication?</strong>
-        <p class="mb-2">
-            @medicationToDelete.Name will no longer be visible, but the record will be kept in the system.
-        </p>
-
-        <div class="d-flex gap-2">
-            <button class="btn btn-danger" @onclick="DeleteMedicationAsync">
-                Delete
-            </button>
-
-            <button class="btn btn-secondary" @onclick="CancelDelete">
-                Cancel
-            </button>
-        </div>
-    </div>
-}
+    <ConfirmDialog
+        IsVisible="@(medicationToDelete is not null)"
+        Title="Delete medication?"
+        Message="@GetDeleteMessage()"
+        Icon="bi bi-trash"
+        ConfirmText="Delete"
+        CancelText="Cancel"
+        ConfirmButtonClass="btn-danger"
+        OnConfirm="DeleteMedicationAsync"
+        OnCancel="CancelDelete" />
 </div>
 
 @code {
@@ -70,7 +67,6 @@
 
     private List<MedicationDto> medications = new();
     private CreateMedicationDto newMedication = new();
-
     private MedicationDto? medicationToDelete;
 
     private bool isLoading = true;
@@ -189,32 +185,40 @@
     }
 
     private void ConfirmDelete(MedicationDto medication)
-{
-    errorMessage = null;
-    medicationToDelete = medication;
-}
-
-private void CancelDelete()
-{
-    medicationToDelete = null;
-}
-
-private async Task DeleteMedicationAsync()
-{
-    if (medicationToDelete is null)
-        return;
-
-    var deleted = await MedicationService.DeleteAsync(
-        ServiceUserId,
-        medicationToDelete.Id);
-
-    if (!deleted)
     {
-        errorMessage = "Medication could not be deleted.";
-        return;
+        errorMessage = null;
+        medicationToDelete = medication;
     }
 
-    medicationToDelete = null;
-    await LoadMedicationsAsync();
-}
+    private void CancelDelete()
+    {
+        medicationToDelete = null;
+    }
+
+    private async Task DeleteMedicationAsync()
+    {
+        if (medicationToDelete is null)
+            return;
+
+        var deleted = await MedicationService.DeleteAsync(
+            ServiceUserId,
+            medicationToDelete.Id);
+
+        if (!deleted)
+        {
+            errorMessage = "Medication could not be deleted.";
+            return;
+        }
+
+        medicationToDelete = null;
+        await LoadMedicationsAsync();
+    }
+
+    private string GetDeleteMessage()
+    {
+        if (medicationToDelete is null)
+            return "";
+
+        return $"{medicationToDelete.Name} will no longer be visible, but the record will be kept in the system.";
+    }
 }

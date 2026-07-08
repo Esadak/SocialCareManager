@@ -1,11 +1,17 @@
 @using SocialCareManager.Web.Services.Api
 @using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Components.Common
 
 @if (Medications.Count == 0)
 {
-    <div class="alert alert-info">
-        No medications found.
-    </div>
+    <EmptyState
+        Icon="bi bi-capsule"
+        Title="No medication added"
+        Description="This person doesn't have any registered medication yet."
+        ShowButton="true"
+        ButtonText="Add medication"
+        ButtonIcon="bi bi-plus-circle"
+        OnButtonClick="OnAdd" />
 }
 else
 {
@@ -27,12 +33,29 @@ else
             @foreach (var medication in Medications)
             {
                 <tr>
-                    <td>@medication.Name</td>
+                    <td>
+                        <div class="fw-semibold">@medication.Name</div>
+
+                        <div class="small text-muted">
+                            Created @FormatDate(medication.CreatedAt)
+                            by @DisplayUser(medication.CreatedBy)
+                        </div>
+
+                        @if (medication.UpdatedAt.HasValue)
+                        {
+                            <div class="small text-muted">
+                                Updated @FormatDate(medication.UpdatedAt.Value)
+                                by @DisplayUser(medication.UpdatedBy)
+                            </div>
+                        }
+                    </td>
+
                     <td>@medication.Strength</td>
                     <td>@medication.Dosage</td>
                     <td>@medication.Frequency</td>
                     <td>@medication.Route</td>
                     <td>@medication.StartDate.ToShortDateString()</td>
+
                     <td>
                         @if (medication.IsActive)
                         {
@@ -43,6 +66,7 @@ else
                             <span class="badge bg-secondary">Inactive</span>
                         }
                     </td>
+
                     <td>
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-primary"
@@ -75,8 +99,25 @@ else
     public bool CanDelete { get; set; }
 
     [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    [Parameter]
     public EventCallback<MedicationDto> OnEdit { get; set; }
 
     [Parameter]
     public EventCallback<MedicationDto> OnDelete { get; set; }
+
+    private string FormatDate(DateTime date)
+    {
+        return date == default
+            ? "not available"
+            : date.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private string DisplayUser(string? user)
+    {
+        return string.IsNullOrWhiteSpace(user)
+            ? "System"
+            : user;
+    }
 }
