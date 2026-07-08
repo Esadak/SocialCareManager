@@ -1,0 +1,220 @@
+@using SocialCareManager.Web.Services.Api
+@using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Services
+@inject AuthService AuthService
+@inject MedicationService MedicationService
+
+<div class="section-card">
+    <div class="section-header">
+        <div>
+            <h3><i class="bi bi-capsule"></i> Medication</h3>
+            <p>Manage medicines for this person.</p>
+        </div>
+
+        <button class="btn btn-primary" @onclick="ToggleCreateForm">
+            <i class="bi bi-plus-circle"></i>
+            Add Medication
+        </button>
+    </div>
+
+    @if (showCreateForm)
+    {
+        <MedicationForm Medication="newMedication"
+                        OnSave="SaveMedicationAsync"
+                        OnCancel="CancelCreate" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <p>Loading medications...</p>
+    }
+    else
+    {
+        <MedicationList Medications="medications"
+                CanDelete="AuthService.IsAdmin"
+                OnEdit="StartEdit"
+                OnDelete="ConfirmDelete" />
+    }
+
+    @if (medicationToDelete is not null)
+{
+    <div class="alert alert-warning mt-3">
+        <strong>Delete medication?</strong>
+        <p class="mb-2">
+            @medicationToDelete.Name will no longer be visible, but the record will be kept in the system.
+        </p>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger" @onclick="DeleteMedicationAsync">
+                Delete
+            </button>
+
+            <button class="btn btn-secondary" @onclick="CancelDelete">
+                Cancel
+            </button>
+        </div>
+    </div>
+}
+</div>
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private List<MedicationDto> medications = new();
+    private CreateMedicationDto newMedication = new();
+
+    private MedicationDto? medicationToDelete;
+
+    private bool isLoading = true;
+    private bool showCreateForm;
+    private bool isEditing;
+    private Guid? editingMedicationId;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadMedicationsAsync();
+    }
+
+    private async Task LoadMedicationsAsync()
+    {
+        isLoading = true;
+        medications = await MedicationService.GetAllAsync(ServiceUserId);
+        isLoading = false;
+    }
+
+    private void ToggleCreateForm()
+    {
+        errorMessage = null;
+        isEditing = false;
+        editingMedicationId = null;
+        newMedication = new CreateMedicationDto();
+        showCreateForm = !showCreateForm;
+    }
+
+    private void CancelCreate()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        errorMessage = null;
+        showCreateForm = false;
+        isEditing = false;
+        editingMedicationId = null;
+        newMedication = new CreateMedicationDto();
+    }
+
+    private void StartEdit(MedicationDto medication)
+    {
+        errorMessage = null;
+        isEditing = true;
+        editingMedicationId = medication.Id;
+        showCreateForm = true;
+
+        newMedication = new CreateMedicationDto
+        {
+            Name = medication.Name,
+            Strength = medication.Strength,
+            Dosage = medication.Dosage,
+            Route = medication.Route,
+            Frequency = medication.Frequency,
+            AdministrationTimes = medication.AdministrationTimes,
+            StartDate = medication.StartDate,
+            EndDate = medication.EndDate,
+            Prescriber = medication.Prescriber,
+            Instructions = medication.Instructions,
+            IsPrn = medication.IsPrn,
+            Reason = medication.Reason,
+            IsActive = medication.IsActive
+        };
+    }
+
+    private async Task SaveMedicationAsync()
+    {
+        errorMessage = null;
+
+        if (isEditing && editingMedicationId.HasValue)
+        {
+            var editDto = new EditMedicationDto
+            {
+                Name = newMedication.Name,
+                Strength = newMedication.Strength,
+                Dosage = newMedication.Dosage,
+                Route = newMedication.Route,
+                Frequency = newMedication.Frequency,
+                AdministrationTimes = newMedication.AdministrationTimes,
+                StartDate = newMedication.StartDate,
+                EndDate = newMedication.EndDate,
+                Prescriber = newMedication.Prescriber,
+                Instructions = newMedication.Instructions,
+                IsPrn = newMedication.IsPrn,
+                Reason = newMedication.Reason,
+                IsActive = newMedication.IsActive
+            };
+
+            var updated = await MedicationService.UpdateAsync(
+                ServiceUserId,
+                editingMedicationId.Value,
+                editDto);
+
+            if (!updated)
+            {
+                errorMessage = "Medication could not be updated.";
+                return;
+            }
+        }
+        else
+        {
+            var created = await MedicationService.CreateAsync(ServiceUserId, newMedication);
+
+            if (created is null)
+            {
+                errorMessage = "Medication could not be created. Please check required fields.";
+                return;
+            }
+        }
+
+        ResetForm();
+        await LoadMedicationsAsync();
+    }
+
+    private void ConfirmDelete(MedicationDto medication)
+{
+    errorMessage = null;
+    medicationToDelete = medication;
+}
+
+private void CancelDelete()
+{
+    medicationToDelete = null;
+}
+
+private async Task DeleteMedicationAsync()
+{
+    if (medicationToDelete is null)
+        return;
+
+    var deleted = await MedicationService.DeleteAsync(
+        ServiceUserId,
+        medicationToDelete.Id);
+
+    if (!deleted)
+    {
+        errorMessage = "Medication could not be deleted.";
+        return;
+    }
+
+    medicationToDelete = null;
+    await LoadMedicationsAsync();
+}
+}

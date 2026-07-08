@@ -5,7 +5,7 @@ using SocialCareManager.Api.Dtos.Medication;
 using SocialCareManager.Api.Mapping;
 using SocialCareManager.Api.Validation;
 using SocialCareManager.Infrastructure.Data;
-using SocialCareManager.Web.Dtos;
+
 
 namespace SocialCareManager.Api.Controllers;
 
@@ -68,6 +68,12 @@ public async Task<ActionResult<MedicationDto>> Create(
 
     if (validationErrors.Count > 0)
         return BadRequest(validationErrors);
+    dto.StartDate = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
+
+    if (dto.EndDate.HasValue)
+    {
+    dto.EndDate = DateTime.SpecifyKind(dto.EndDate.Value, DateTimeKind.Utc);
+    }
 
     var medication = dto.ToEntity(
         serviceUserId,
@@ -104,10 +110,37 @@ public async Task<IActionResult> Update(
 
     if (validationErrors.Count > 0)
         return BadRequest(validationErrors);
+    dto.StartDate = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
+
+    if (dto.EndDate.HasValue)
+    {
+    dto.EndDate = DateTime.SpecifyKind(dto.EndDate.Value, DateTimeKind.Utc);
+    }
 
     medication.UpdateFromDto(
         dto,
         GetCurrentUserName());
+
+    await Context.SaveChangesAsync();
+
+    return NoContent();
+}
+
+[Authorize(Roles = "Admin")]
+[HttpDelete("{id:guid}")]
+public async Task<IActionResult> Delete(
+    Guid serviceUserId,
+    Guid id)
+{
+    var medication = await Context.Medications
+        .FirstOrDefaultAsync(x =>
+            x.ServiceUserId == serviceUserId &&
+            x.Id == id);
+
+    if (medication is null)
+        return NotFound();
+
+    medication.MarkAsDeleted(GetCurrentUserName());
 
     await Context.SaveChangesAsync();
 

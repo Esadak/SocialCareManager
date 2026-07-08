@@ -1,4 +1,4 @@
-namespace SocialCareManager.Web.Dtos;
+namespace SocialCareManager.Api.Dtos.Medication;
 
 public class EditMedicationDto
 {

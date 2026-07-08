@@ -34,7 +34,4 @@ public class Medication : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
-    public string? CreatedBy { get; set; }
-
-    public string? UpdatedBy { get; set; }
 }

@@ -14,6 +14,7 @@ builder.Services.AddScoped<ServiceUserService>();
 builder.Services.AddScoped<DailyNoteService>();
 builder.Services.AddScoped<NextOfKinService>();
 builder.Services.AddScoped<CarePlanService>();
+builder.Services.AddScoped<MedicationService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

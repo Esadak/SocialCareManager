@@ -3,6 +3,7 @@
 @using SocialCareManager.Web.Services
 @using SocialCareManager.Web.Components.ServiceUsers
 @using SocialCareManager.Web.Services.Api
+@using SocialCareManager.Web.Components.Medication
 @inject DailyNoteService DailyNoteService
 @inject NavigationManager Navigation
 @inject AuthService AuthService
@@ -51,10 +52,11 @@ else
             Next of Kin
         </button>
 
-        <button class="record-tab disabled" disabled>
-            <i class="bi bi-capsule"></i>
-            Medication
-        </button>
+        <button class="record-tab @(activeTab == "medication" ? "active" : "")"
+        @onclick="@(() => SetActiveTab("medication"))">
+    <i class="bi bi-capsule"></i>
+    Medication
+</button>
 
         <button class="record-tab disabled" disabled>
             <i class="bi bi-calendar-event"></i>
@@ -125,6 +127,10 @@ else
     {
         <NextOfKinSection ServiceUserId="Id" />
     }
+    else if (activeTab == "medication")
+{
+    <MedicationSection ServiceUserId="Id" />
+}
 }
 
 @code {

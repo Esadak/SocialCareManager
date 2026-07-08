@@ -6,7 +6,11 @@ public abstract class BaseEntity
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public string? CreatedBy { get; set; }
+
     public DateTime? UpdatedAt { get; set; }
+
+    public string? UpdatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
 
@@ -14,9 +18,18 @@ public abstract class BaseEntity
 
     public string? DeletedBy { get; set; }
 
-    public void MarkAsUpdated()
+    public void MarkAsCreated(string createdBy)
+    {
+        CreatedAt = DateTime.UtcNow;
+        CreatedBy = createdBy;
+        UpdatedAt = null;
+        UpdatedBy = null;
+    }
+
+    public void MarkAsUpdated(string updatedBy)
     {
         UpdatedAt = DateTime.UtcNow;
+        UpdatedBy = updatedBy;
     }
 
     public void MarkAsDeleted(string deletedBy)

@@ -1,0 +1,115 @@
+@using SocialCareManager.Web.Dtos
+
+<div class="card p-3 mb-4">
+    <h5 class="mb-2">Add medication</h5>
+    <p class="text-muted mb-3">
+        Add medicine, dose and when it should be taken.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Medication name</label>
+            <input class="form-control" @bind="Medication.Name" placeholder="Example: Paracetamol" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Medication strength</label>
+            <input class="form-control" @bind="Medication.Strength" placeholder="Example: 500 mg" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Dose</label>
+            <input class="form-control" @bind="Medication.Dosage" placeholder="Example: 1 tablet or 5 ml" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">How to take</label>
+            <input class="form-control" @bind="Medication.Route" placeholder="Example: By mouth" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">How often</label>
+            <input class="form-control" @bind="Medication.Frequency" placeholder="Example: Morning and evening" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Medication times</label>
+            <input class="form-control" @bind="Medication.AdministrationTimes" placeholder="Example: 08:00, 20:00" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Start date</label>
+            <input type="date" class="form-control" @bind="Medication.StartDate" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">End date</label>
+            <input type="date" class="form-control" @bind="Medication.EndDate" />
+            <div class="form-text">Leave empty if there is no end date.</div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Prescribed by</label>
+            <input class="form-control" @bind="Medication.Prescriber" placeholder="Example: Doctor or nurse" />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" @bind="Medication.IsActive" />
+                <label class="form-check-label">This medication is active</label>
+            </div>
+        </div>
+
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" @bind="Medication.IsPrn" />
+                <label class="form-check-label">Use only when needed (PRN)</label>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Reason for medication</label>
+            <input class="form-control" @bind="Medication.Reason" placeholder="Example: Pain, anxiety or sleep" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Additional information</label>
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="Medication.Instructions"
+                      placeholder="Example: Take after meals."></textarea>
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-success" @onclick="OnSaveClicked">
+            <i class="bi bi-check-circle"></i>
+            Save medication
+        </button>
+
+        <button class="btn btn-secondary" @onclick="OnCancelClicked">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public CreateMedicationDto Medication { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task OnSaveClicked()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task OnCancelClicked()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

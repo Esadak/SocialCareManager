@@ -1,6 +1,5 @@
 using SocialCareManager.Api.Dtos.Medication;
 using SocialCareManager.Domain.Entities;
-using SocialCareManager.Web.Dtos;
 
 namespace SocialCareManager.Api.Mapping;
 

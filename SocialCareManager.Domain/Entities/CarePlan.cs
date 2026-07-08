@@ -26,7 +26,4 @@ public class CarePlan : BaseEntity
 
     // Only one active plan should normally exist
     public bool IsActive { get; set; } = true;
-    public string? CreatedBy { get; set; }
-
-public string? UpdatedBy { get; set; }
 }

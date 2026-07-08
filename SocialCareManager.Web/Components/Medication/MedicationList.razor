@@ -1,0 +1,82 @@
+@using SocialCareManager.Web.Services.Api
+@using SocialCareManager.Web.Dtos
+
+@if (Medications.Count == 0)
+{
+    <div class="alert alert-info">
+        No medications found.
+    </div>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Strength</th>
+                <th>Dose</th>
+                <th>How often</th>
+                <th>How to take</th>
+                <th>Start</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var medication in Medications)
+            {
+                <tr>
+                    <td>@medication.Name</td>
+                    <td>@medication.Strength</td>
+                    <td>@medication.Dosage</td>
+                    <td>@medication.Frequency</td>
+                    <td>@medication.Route</td>
+                    <td>@medication.StartDate.ToShortDateString()</td>
+                    <td>
+                        @if (medication.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => OnEdit.InvokeAsync(medication)">
+                                <i class="bi bi-pencil"></i>
+                                Edit
+                            </button>
+
+                            @if (CanDelete)
+                            {
+                                <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => OnDelete.InvokeAsync(medication)">
+                                    <i class="bi bi-trash"></i>
+                                    Delete
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public List<MedicationDto> Medications { get; set; } = new();
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<MedicationDto> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<MedicationDto> OnDelete { get; set; }
+}
