@@ -19,4 +19,7 @@ public class ServiceUser  : BaseEntity
     = new List<CarePlan>();
     public ICollection<Medication> Medications { get; set; } 
     = new List<Medication>();
+
+    public ICollection<MedicationAdministration> MedicationAdministrations { get; set; }
+    = new List<MedicationAdministration>();
 }

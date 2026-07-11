@@ -7,11 +7,16 @@ namespace SocialCareManager.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
+
+    
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options)
         : base(options)
     { 
     }
+
+    public DbSet<MedicationAdministration> MedicationAdministrations =>
+    Set<MedicationAdministration>();
 
     public DbSet<ServiceUser> ServiceUsers => Set<ServiceUser>();
 
@@ -40,5 +45,57 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     modelBuilder.Entity<Medication>()
         .HasQueryFilter(x => !x.IsDeleted);
+
+
+modelBuilder.Entity<MedicationAdministration>(entity =>
+{
+    entity.ToTable("MedicationAdministrations");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Status)
+        .HasConversion<string>()
+        .HasMaxLength(30);
+
+    entity.Property(x => x.Reason)
+        .HasMaxLength(500);
+
+    entity.Property(x => x.Notes)
+        .HasMaxLength(2000);
+
+    entity.Property(x => x.AdministeredBy)
+        .HasMaxLength(256);
+
+    entity.HasOne(x => x.Medication)
+        .WithMany(x => x.Administrations)
+        .HasForeignKey(x => x.MedicationId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(x => x.ServiceUser)
+        .WithMany(x => x.MedicationAdministrations)
+        .HasForeignKey(x => x.ServiceUserId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasIndex(x => x.ServiceUserId);
+
+    entity.HasIndex(x => x.MedicationId);
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.ScheduledAt
+    });
+
+    entity.HasIndex(x => new
+    {
+        x.MedicationId,
+        x.ScheduledAt
+    });
+});
+
+modelBuilder.Entity<MedicationAdministration>()
+    .HasQueryFilter(x =>
+        !x.IsDeleted &&
+        !x.Medication.IsDeleted);
 }
 }

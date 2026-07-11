@@ -1,0 +1,140 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Services.Api
+@inject MedicationAdministrationService AdministrationService
+@inject MedicationService MedicationService
+
+<div class="section-card">
+    <ActionToolbar
+        Title="Medication doses"
+        Subtitle="Plan and record each medication dose.">
+
+        <Actions>
+            @if (medications.Count > 0)
+            {
+                <button class="btn btn-primary"
+                        @onclick="OpenCreateForm">
+                    <i class="bi bi-plus-circle"></i>
+                    Plan dose
+                </button>
+            }
+        </Actions>
+    </ActionToolbar>
+
+    @if (medications.Count == 0 && !isLoading)
+    {
+        <div class="alert alert-warning">
+            Add a medication before planning a dose.
+        </div>
+    }
+
+    @if (showCreateForm)
+    {
+        <MedicationAdministrationForm
+            Administration="newAdministration"
+            Medications="medications"
+            OnSave="CreateAdministrationAsync"
+            OnCancel="CloseCreateForm" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <p>Loading medication doses...</p>
+    }
+    else
+    {
+        <MedicationAdministrationList
+            Administrations="administrations"
+            OnRecord="StartRecording" />
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private List<MedicationDto> medications = new();
+    private List<MedicationAdministrationDto> administrations = new();
+
+    private CreateMedicationAdministrationDto newAdministration = new();
+
+    private bool isLoading = true;
+    private bool showCreateForm;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        medications = await MedicationService.GetAllAsync(ServiceUserId);
+
+        administrations =
+            await AdministrationService.GetAllAsync(ServiceUserId);
+
+        isLoading = false;
+    }
+
+    private void OpenCreateForm()
+    {
+        errorMessage = null;
+
+        newAdministration = new CreateMedicationAdministrationDto
+        {
+            ScheduledAt = DateTime.Now
+        };
+
+        showCreateForm = true;
+    }
+
+    private void CloseCreateForm()
+    {
+        errorMessage = null;
+        showCreateForm = false;
+        newAdministration = new CreateMedicationAdministrationDto();
+    }
+
+    private async Task CreateAdministrationAsync()
+    {
+        errorMessage = null;
+
+        if (newAdministration.MedicationId == Guid.Empty)
+        {
+            errorMessage = "Select a medication.";
+            return;
+        }
+
+        var created = await AdministrationService.CreateAsync(
+            ServiceUserId,
+            newAdministration);
+
+        if (created is null)
+        {
+            errorMessage =
+                "The medication dose could not be planned.";
+            return;
+        }
+
+        CloseCreateForm();
+        await LoadDataAsync();
+    }
+
+    private void StartRecording(
+        MedicationAdministrationDto administration)
+    {
+        errorMessage =
+            $"Recording {administration.MedicationName} will be added in the next step.";
+    }
+}

@@ -4,6 +4,7 @@ namespace SocialCareManager.Domain.Entities;
 
 public class Medication : BaseEntity
 {
+    
     public Guid ServiceUserId { get; set; }
 
     public ServiceUser ServiceUser { get; set; } = null!;
@@ -33,5 +34,8 @@ public class Medication : BaseEntity
     public string Reason { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
+
+    public ICollection<MedicationAdministration> Administrations { get; set; }
+    = new List<MedicationAdministration>();
 
 }

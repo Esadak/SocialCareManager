@@ -1,0 +1,142 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos
+
+@if (Administrations.Count == 0)
+{
+    <EmptyState
+        Icon="bi bi-clock-history"
+        Title="No medication doses planned"
+        Description="There are no planned medication doses for this person."
+        ShowButton="false" />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Medication</th>
+                    <th>Planned time</th>
+                    <th>Status</th>
+                    <th>Given at</th>
+                    <th>Signed by</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var administration in Administrations)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">
+                                @administration.MedicationName
+                            </div>
+
+                            <div class="small text-muted">
+                                @GetMedicationDescription(administration)
+                            </div>
+                        </td>
+
+                        <td>
+                            @FormatDate(administration.ScheduledAt)
+                        </td>
+
+                        <td>
+                            <span class="badge @GetStatusClass(administration.Status)">
+                                @GetStatusText(administration.Status)
+                            </span>
+                        </td>
+
+                        <td>
+                            @(administration.AdministeredAt.HasValue
+                                ? FormatDate(administration.AdministeredAt.Value)
+                                : "Not recorded")
+                        </td>
+
+                        <td>
+                            @(string.IsNullOrWhiteSpace(administration.AdministeredBy)
+                                ? "Not signed"
+                                : administration.AdministeredBy)
+                        </td>
+
+                        <td>
+                            @if (administration.Status ==
+                                 MedicationAdministrationStatus.Pending)
+                            {
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => OnRecord.InvokeAsync(administration)">
+                                    <i class="bi bi-check2-square"></i>
+                                    Record
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="small text-muted">
+                                    Completed
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<MedicationAdministrationDto> Administrations { get; set; }
+        = new();
+
+    [Parameter]
+    public EventCallback<MedicationAdministrationDto> OnRecord { get; set; }
+
+    private static string GetMedicationDescription(
+        MedicationAdministrationDto administration)
+    {
+        var values = new[]
+        {
+            administration.MedicationStrength,
+            administration.MedicationDosage
+        };
+
+        return string.Join(
+            " · ",
+            values.Where(x => !string.IsNullOrWhiteSpace(x)));
+    }
+
+    private static string FormatDate(DateTime date)
+    {
+        return date.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private static string GetStatusClass(
+        MedicationAdministrationStatus status)
+    {
+        return status switch
+        {
+            MedicationAdministrationStatus.Given => "bg-success",
+            MedicationAdministrationStatus.Refused => "bg-danger",
+            MedicationAdministrationStatus.Delayed => "bg-warning text-dark",
+            MedicationAdministrationStatus.Omitted => "bg-secondary",
+            MedicationAdministrationStatus.NotAvailable => "bg-dark",
+            _ => "bg-primary"
+        };
+    }
+
+    private static string GetStatusText(
+        MedicationAdministrationStatus status)
+    {
+        return status switch
+        {
+            MedicationAdministrationStatus.Pending => "Waiting",
+            MedicationAdministrationStatus.Given => "Given",
+            MedicationAdministrationStatus.Refused => "Refused",
+            MedicationAdministrationStatus.NotAvailable => "Not available",
+            MedicationAdministrationStatus.Omitted => "Not given",
+            MedicationAdministrationStatus.Delayed => "Delayed",
+            _ => status.ToString()
+        };
+    }
+}

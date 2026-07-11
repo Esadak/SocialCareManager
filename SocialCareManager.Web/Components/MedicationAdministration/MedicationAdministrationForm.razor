@@ -1,0 +1,96 @@
+@using SocialCareManager.Web.Dtos
+
+<div class="card p-3 mb-4">
+    <h5 class="mb-2">Plan medication dose</h5>
+
+    <p class="text-muted">
+        Select the medication and when it should be given.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">
+                Medication
+            </label>
+
+            <select class="form-select"
+                    @bind="Administration.MedicationId">
+                <option value="@Guid.Empty">
+                    Select medication
+                </option>
+
+                @foreach (var medication in Medications)
+                {
+                    <option value="@medication.Id">
+                        @medication.Name
+                        @if (!string.IsNullOrWhiteSpace(medication.Strength))
+                        {
+                            <text> - @medication.Strength</text>
+                        }
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">
+                When should it be given?
+            </label>
+
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="Administration.ScheduledAt" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">
+                Additional information
+            </label>
+
+            <textarea class="form-control"
+                      rows="3"
+                      placeholder="Example: Give after breakfast."
+                      @bind="Administration.Notes">
+            </textarea>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success"
+                @onclick="SaveAsync">
+            <i class="bi bi-check-circle"></i>
+            Save dose
+        </button>
+
+        <button class="btn btn-secondary"
+                @onclick="CancelAsync">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public CreateMedicationAdministrationDto Administration { get; set; }
+        = new();
+
+    [Parameter]
+    public List<MedicationDto> Medications { get; set; }
+        = new();
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task SaveAsync()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}
