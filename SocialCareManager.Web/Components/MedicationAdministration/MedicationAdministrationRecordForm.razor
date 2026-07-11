@@ -1,0 +1,126 @@
+@using SocialCareManager.Web.Dtos
+
+<div class="card p-3 mb-4">
+    <h5 class="mb-2">Record medication dose</h5>
+
+    <p class="text-muted">
+        Record what happened when
+        <strong>@Administration.MedicationName</strong>
+        was due.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">
+                What happened?
+            </label>
+
+            <select class="form-select"
+                    @bind="Record.Status">
+                <option value="@MedicationAdministrationStatus.Pending">
+                    Select status
+                </option>
+
+                <option value="@MedicationAdministrationStatus.Given">
+                    Given
+                </option>
+
+                <option value="@MedicationAdministrationStatus.Refused">
+                    Refused
+                </option>
+
+                <option value="@MedicationAdministrationStatus.Delayed">
+                    Delayed
+                </option>
+
+                <option value="@MedicationAdministrationStatus.Omitted">
+                    Not given
+                </option>
+
+                <option value="@MedicationAdministrationStatus.NotAvailable">
+                    Not available
+                </option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">
+                Time recorded
+            </label>
+
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="Record.AdministeredAt" />
+        </div>
+
+        @if (RequiresReason)
+        {
+            <div class="col-12">
+                <label class="form-label">
+                    Reason
+                </label>
+
+                <input class="form-control"
+                       @bind="Record.Reason"
+                       placeholder="Explain why the medication was not given as planned." />
+            </div>
+        }
+
+        <div class="col-12">
+            <label class="form-label">
+                Additional information
+            </label>
+
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="Record.Notes"
+                      placeholder="Add any useful information.">
+            </textarea>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success"
+                @onclick="SaveAsync">
+            <i class="bi bi-check-circle"></i>
+            Save record
+        </button>
+
+        <button class="btn btn-secondary"
+                @onclick="CancelAsync">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public MedicationAdministrationDto Administration { get; set; }
+        = new();
+
+    [Parameter]
+    public RecordMedicationAdministrationDto Record { get; set; }
+        = new();
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private bool RequiresReason =>
+        Record.Status == MedicationAdministrationStatus.Refused ||
+        Record.Status == MedicationAdministrationStatus.Delayed ||
+        Record.Status == MedicationAdministrationStatus.Omitted ||
+        Record.Status == MedicationAdministrationStatus.NotAvailable;
+
+    private async Task SaveAsync()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

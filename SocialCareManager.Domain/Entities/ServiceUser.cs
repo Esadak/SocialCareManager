@@ -22,4 +22,7 @@ public class ServiceUser  : BaseEntity
 
     public ICollection<MedicationAdministration> MedicationAdministrations { get; set; }
     = new List<MedicationAdministration>();
+
+    public ICollection<Incident> Incidents { get; set; }
+    = new List<Incident>();
 }

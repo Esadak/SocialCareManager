@@ -10,6 +10,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddScoped<MedicationValidator>();
 builder.Services.AddScoped<MedicationAdministrationValidator>();
+builder.Services.AddScoped<IncidentValidator>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
