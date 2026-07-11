@@ -1,0 +1,357 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Services.Api
+
+@inject IncidentService IncidentService
+@inject AuthService AuthService
+
+<div class="section-card">
+    <ActionToolbar
+        Title="Incidents"
+        Subtitle="Report, review and follow up incidents.">
+
+        <Actions>
+            @if (incidents.Count > 0)
+            {
+                <button class="btn btn-primary" @onclick="OpenCreateForm">
+                    <i class="bi bi-plus-circle"></i>
+                    Report incident
+                </button>
+            }
+        </Actions>
+    </ActionToolbar>
+
+    @if (showForm)
+    {
+        <IncidentForm Incident="incidentForm"
+                      IsEditing="isEditing"
+                      OnSave="SaveIncidentAsync"
+                      OnCancel="CloseForm" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <p>Loading incidents...</p>
+    }
+    else
+    {
+        <IncidentList Incidents="incidents"
+                      SelectedIncidentId="selectedIncident?.Id"
+                      CanDelete="AuthService.IsAdmin"
+                      OnAdd="OpenCreateForm"
+                      OnSelect="SelectIncident"
+                      OnEdit="StartEdit"
+                      OnDelete="ConfirmDelete" />
+    }
+
+    @if (selectedIncident is not null && !showForm)
+    {
+        <IncidentDetails Incident="selectedIncident"
+                         OnChangeStatus="ChangeStatusAsync"
+                         OnAddFollowUp="AddFollowUpAsync"
+                         OnClose="CloseIncidentAsync" />
+    }
+
+    <ConfirmDialog
+        IsVisible="@(incidentToDelete is not null)"
+        Title="Delete incident?"
+        Message="@GetDeleteMessage()"
+        Icon="bi bi-trash"
+        ConfirmText="Delete"
+        CancelText="Cancel"
+        ConfirmButtonClass="btn-danger"
+        OnConfirm="DeleteIncidentAsync"
+        OnCancel="CancelDelete" />
+</div>
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private List<IncidentDto> incidents = new();
+
+    private IncidentDto? selectedIncident;
+    private IncidentDto? incidentToDelete;
+
+    private CreateIncidentDto incidentForm = new();
+
+    private Guid? editingIncidentId;
+
+    private bool isLoading = true;
+    private bool showForm;
+    private bool isEditing;
+
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadIncidentsAsync();
+    }
+
+    private async Task LoadIncidentsAsync(Guid? selectIncidentId = null)
+    {
+        isLoading = true;
+
+        incidents = await IncidentService.GetAllAsync(ServiceUserId);
+
+        if (selectIncidentId.HasValue)
+        {
+            selectedIncident = incidents.FirstOrDefault(
+                x => x.Id == selectIncidentId.Value);
+        }
+        else if (selectedIncident is not null)
+        {
+            selectedIncident = incidents.FirstOrDefault(
+                x => x.Id == selectedIncident.Id);
+        }
+
+        isLoading = false;
+    }
+
+    private void OpenCreateForm()
+    {
+        errorMessage = null;
+        selectedIncident = null;
+        editingIncidentId = null;
+        isEditing = false;
+
+        incidentForm = new CreateIncidentDto
+        {
+            OccurredAt = DateTime.Now,
+            Category = IncidentCategory.Other,
+            Severity = IncidentSeverity.Medium
+        };
+
+        showForm = true;
+    }
+
+    private void StartEdit(IncidentDto incident)
+    {
+        errorMessage = null;
+        selectedIncident = null;
+
+        editingIncidentId = incident.Id;
+        isEditing = true;
+        showForm = true;
+
+        incidentForm = new CreateIncidentDto
+        {
+            Title = incident.Title,
+            Category = incident.Category,
+            Severity = incident.Severity,
+            OccurredAt = incident.OccurredAt.ToLocalTime(),
+            Description = incident.Description,
+            ImmediateActions = incident.ImmediateActions,
+            PeopleInvolved = incident.PeopleInvolved,
+            ManagerNotified = incident.ManagerNotified
+        };
+    }
+
+    private void CloseForm()
+    {
+        errorMessage = null;
+        showForm = false;
+        isEditing = false;
+        editingIncidentId = null;
+        incidentForm = new CreateIncidentDto();
+    }
+
+    private async Task SaveIncidentAsync()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(incidentForm.Title))
+        {
+            errorMessage = "Enter a short title.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(incidentForm.Description))
+        {
+            errorMessage = "Describe what happened.";
+            return;
+        }
+
+        Guid? savedIncidentId;
+
+        if (isEditing && editingIncidentId.HasValue)
+        {
+            var editDto = new EditIncidentDto
+            {
+                Title = incidentForm.Title,
+                Category = incidentForm.Category,
+                Severity = incidentForm.Severity,
+                OccurredAt = incidentForm.OccurredAt,
+                Description = incidentForm.Description,
+                ImmediateActions = incidentForm.ImmediateActions,
+                PeopleInvolved = incidentForm.PeopleInvolved,
+                ManagerNotified = incidentForm.ManagerNotified
+            };
+
+            var updated = await IncidentService.UpdateAsync(
+                ServiceUserId,
+                editingIncidentId.Value,
+                editDto);
+
+            if (!updated)
+            {
+                errorMessage = "The incident could not be updated.";
+                return;
+            }
+
+            savedIncidentId = editingIncidentId.Value;
+        }
+        else
+        {
+            var created = await IncidentService.CreateAsync(
+                ServiceUserId,
+                incidentForm);
+
+            if (created is null)
+            {
+                errorMessage = "The incident could not be created.";
+                return;
+            }
+
+            savedIncidentId = created.Id;
+        }
+
+        CloseForm();
+        await LoadIncidentsAsync(savedIncidentId);
+    }
+
+    private void SelectIncident(IncidentDto incident)
+    {
+        errorMessage = null;
+        showForm = false;
+        selectedIncident = incident;
+    }
+
+    private async Task ChangeStatusAsync(ChangeIncidentStatusDto dto)
+    {
+        if (selectedIncident is null)
+            return;
+
+        errorMessage = null;
+
+        var changed = await IncidentService.ChangeStatusAsync(
+            ServiceUserId,
+            selectedIncident.Id,
+            dto);
+
+        if (!changed)
+        {
+            errorMessage =
+                "The incident status could not be updated. Select a different status.";
+            return;
+        }
+
+        await LoadIncidentsAsync(selectedIncident.Id);
+    }
+
+    private async Task AddFollowUpAsync(CreateIncidentFollowUpDto dto)
+    {
+        if (selectedIncident is null)
+            return;
+
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(dto.Note))
+        {
+            errorMessage = "Enter follow-up information.";
+            return;
+        }
+
+        var created = await IncidentService.AddFollowUpAsync(
+            ServiceUserId,
+            selectedIncident.Id,
+            dto);
+
+        if (created is null)
+        {
+            errorMessage = "The follow-up could not be added.";
+            return;
+        }
+
+        await LoadIncidentsAsync(selectedIncident.Id);
+    }
+
+    private async Task CloseIncidentAsync(CloseIncidentDto dto)
+    {
+        if (selectedIncident is null)
+            return;
+
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(dto.Outcome))
+        {
+            errorMessage =
+                "Describe the outcome before closing the incident.";
+            return;
+        }
+
+        var closed = await IncidentService.CloseAsync(
+            ServiceUserId,
+            selectedIncident.Id,
+            dto);
+
+        if (!closed)
+        {
+            errorMessage = "The incident could not be closed.";
+            return;
+        }
+
+        await LoadIncidentsAsync(selectedIncident.Id);
+    }
+
+    private void ConfirmDelete(IncidentDto incident)
+    {
+        errorMessage = null;
+        incidentToDelete = incident;
+    }
+
+    private void CancelDelete()
+    {
+        incidentToDelete = null;
+    }
+
+    private async Task DeleteIncidentAsync()
+    {
+        if (incidentToDelete is null)
+            return;
+
+        var deleted = await IncidentService.DeleteAsync(
+            ServiceUserId,
+            incidentToDelete.Id);
+
+        if (!deleted)
+        {
+            errorMessage = "The incident could not be deleted.";
+            return;
+        }
+
+        if (selectedIncident?.Id == incidentToDelete.Id)
+        {
+            selectedIncident = null;
+        }
+
+        incidentToDelete = null;
+        await LoadIncidentsAsync();
+    }
+
+    private string GetDeleteMessage()
+    {
+        if (incidentToDelete is null)
+            return string.Empty;
+
+        return $"{incidentToDelete.Title} will no longer be visible, but the record will remain in the system.";
+    }
+}

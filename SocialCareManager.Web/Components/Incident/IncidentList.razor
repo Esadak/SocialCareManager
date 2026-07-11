@@ -1,0 +1,166 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos
+
+@if (Incidents.Count == 0)
+{
+    <EmptyState
+        Icon="bi bi-exclamation-triangle"
+        Title="No incidents reported"
+        Description="No incidents have been recorded for this person."
+        ShowButton="true"
+        ButtonText="Report incident"
+        ButtonIcon="bi bi-plus-circle"
+        OnButtonClick="OnAdd" />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Incident</th>
+                    <th>Occurred</th>
+                    <th>Type</th>
+                    <th>Seriousness</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var incident in Incidents)
+                {
+                    <tr class="@(SelectedIncidentId == incident.Id ? "table-active" : "")">
+                        <td>
+                            <button class="btn btn-link p-0 text-start text-decoration-none"
+                                    @onclick="() => OnSelect.InvokeAsync(incident)">
+                                <span class="fw-semibold">
+                                    @incident.Title
+                                </span>
+                            </button>
+
+                            <div class="small text-muted">
+                                Reported by @DisplayUser(incident.CreatedBy)
+                            </div>
+                        </td>
+
+                        <td>
+                        @(incident.OccurredAt
+                         .ToLocalTime()
+                        .ToString("yyyy-MM-dd HH:mm"))
+                        </td>
+
+                        <td>@GetCategoryText(incident.Category)</td>
+
+                        <td>
+                            <span class="badge @GetSeverityClass(incident.Severity)">
+                                @incident.Severity
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="badge @GetStatusClass(incident.Status)">
+                                @GetStatusText(incident.Status)
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-2">
+                                @if (incident.Status != IncidentStatus.Closed)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => OnEdit.InvokeAsync(incident)">
+                                        <i class="bi bi-pencil"></i>
+                                        Edit
+                                    </button>
+                                }
+
+                                @if (CanDelete)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => OnDelete.InvokeAsync(incident)">
+                                        <i class="bi bi-trash"></i>
+                                        Delete
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<IncidentDto> Incidents { get; set; } = new();
+
+    [Parameter]
+    public Guid? SelectedIncidentId { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<IncidentDto> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<IncidentDto> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<IncidentDto> OnDelete { get; set; }
+
+    private static string DisplayUser(string? user) =>
+        string.IsNullOrWhiteSpace(user) ? "System" : user;
+
+    private static string GetCategoryText(IncidentCategory category)
+    {
+        return category switch
+        {
+            IncidentCategory.ThreatOrViolence => "Threat or violence",
+            IncidentCategory.MedicationError => "Medication error",
+            IncidentCategory.MissingPerson => "Missing person",
+            IncidentCategory.PropertyDamage => "Property damage",
+            IncidentCategory.SafeguardingConcern => "Safeguarding concern",
+            _ => category.ToString()
+        };
+    }
+
+    private static string GetSeverityClass(IncidentSeverity severity)
+    {
+        return severity switch
+        {
+            IncidentSeverity.Low => "bg-success",
+            IncidentSeverity.Medium => "bg-warning text-dark",
+            IncidentSeverity.High => "bg-danger",
+            IncidentSeverity.Critical => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetStatusClass(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.Open => "bg-primary",
+            IncidentStatus.UnderReview => "bg-info text-dark",
+            IncidentStatus.ActionRequired => "bg-warning text-dark",
+            IncidentStatus.Closed => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetStatusText(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.UnderReview => "Under review",
+            IncidentStatus.ActionRequired => "Action required",
+            _ => status.ToString()
+        };
+    }
+}

@@ -1,0 +1,285 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos
+
+<div class="card p-4 mt-4">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">@Incident.Title</h4>
+
+            <div class="text-muted">
+    @(Incident.OccurredAt
+        .ToLocalTime()
+        .ToString("yyyy-MM-dd HH:mm"))
+</div>
+        </div>
+
+        <span class="badge @GetStatusClass(Incident.Status)">
+            @GetStatusText(Incident.Status)
+        </span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="text-muted small">Type of incident</div>
+            <div class="fw-semibold">@GetCategoryText(Incident.Category)</div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="text-muted small">How serious?</div>
+            <div class="fw-semibold">@Incident.Severity</div>
+        </div>
+
+        <div class="col-12">
+            <div class="text-muted small">What happened?</div>
+            <div>@Incident.Description</div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Incident.ImmediateActions))
+        {
+            <div class="col-12">
+                <div class="text-muted small">Immediate actions</div>
+                <div>@Incident.ImmediateActions</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Incident.PeopleInvolved))
+        {
+            <div class="col-12">
+                <div class="text-muted small">People involved</div>
+                <div>@Incident.PeopleInvolved</div>
+            </div>
+        }
+
+        <div class="col-md-6">
+            <div class="text-muted small">Manager notified</div>
+            <div>@(Incident.ManagerNotified ? "Yes" : "No")</div>
+        </div>
+
+        @if (Incident.ManagerNotifiedAt.HasValue)
+{
+    <div class="col-md-6">
+        <div class="text-muted small">Manager notified at</div>
+
+        <div>
+            @(Incident.ManagerNotifiedAt.Value
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd HH:mm"))
+        </div>
+    </div>
+}
+    </div>
+
+    @if (Incident.Status != IncidentStatus.Closed)
+    {
+        <hr />
+
+        <h5>Update status</h5>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-5">
+                <label class="form-label">New status</label>
+
+                <select class="form-select" @bind="newStatus">
+                    <option value="@IncidentStatus.Open">Open</option>
+                    <option value="@IncidentStatus.UnderReview">
+                        Under review
+                    </option>
+                    <option value="@IncidentStatus.ActionRequired">
+                        Action required
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-7">
+                <label class="form-label">Status note</label>
+
+                <input class="form-control"
+                       @bind="statusNote"
+                       placeholder="Explain why the status is changing." />
+            </div>
+
+            <div class="col-12">
+                <button class="btn btn-outline-primary"
+                        @onclick="ChangeStatusAsync">
+                    Update status
+                </button>
+            </div>
+        </div>
+
+        <h5>Add follow-up</h5>
+
+        <div class="mb-4">
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="followUpNote"
+                      placeholder="Describe follow-up actions or observations.">
+            </textarea>
+
+            <button class="btn btn-outline-primary mt-2"
+                    @onclick="AddFollowUpAsync">
+                <i class="bi bi-plus-circle"></i>
+                Add follow-up
+            </button>
+        </div>
+
+        <h5>Close incident</h5>
+
+        <div class="mb-4">
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="outcome"
+                      placeholder="Describe the outcome and why the incident can be closed.">
+            </textarea>
+
+            <button class="btn btn-success mt-2"
+                    @onclick="CloseIncidentAsync">
+                <i class="bi bi-check-circle"></i>
+                Close incident
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success">
+            <strong>Incident closed</strong>
+
+            @if (!string.IsNullOrWhiteSpace(Incident.Outcome))
+            {
+                <div class="mt-2">@Incident.Outcome</div>
+            }
+
+            @if (Incident.ClosedAt.HasValue)
+{
+    <div class="small mt-2">
+        Closed
+        @(Incident.ClosedAt.Value
+            .ToLocalTime()
+            .ToString("yyyy-MM-dd HH:mm"))
+        by
+        @(string.IsNullOrWhiteSpace(Incident.ClosedBy)
+            ? "System"
+            : Incident.ClosedBy)
+    </div>
+}
+        </div>
+    }
+
+    <hr />
+
+    <h5>Follow-up history</h5>
+
+    @if (Incident.FollowUps.Count == 0)
+    {
+        <p class="text-muted">No follow-up has been added yet.</p>
+    }
+    else
+    {
+        @foreach (var followUp in Incident.FollowUps)
+        {
+            <div class="border rounded p-3 mb-2">
+                <div>@followUp.Note</div>
+
+                <div class="small text-muted mt-2">
+                    @(followUp.FollowedUpAt
+                   .ToLocalTime()
+                   .ToString("yyyy-MM-dd HH:mm"))
+                    · @(string.IsNullOrWhiteSpace(followUp.FollowedUpBy)
+                        ? "System"
+                        : followUp.FollowedUpBy)
+                </div>
+            </div>
+        }
+    }
+
+    <AuditInfo CreatedAt="Incident.CreatedAt"
+               CreatedBy="@Incident.CreatedBy"
+               UpdatedAt="Incident.UpdatedAt"
+               UpdatedBy="@Incident.UpdatedBy" />
+</div>
+
+@code {
+    [Parameter]
+    public IncidentDto Incident { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<ChangeIncidentStatusDto> OnChangeStatus { get; set; }
+
+    [Parameter]
+    public EventCallback<CreateIncidentFollowUpDto> OnAddFollowUp { get; set; }
+
+    [Parameter]
+    public EventCallback<CloseIncidentDto> OnClose { get; set; }
+
+    private IncidentStatus newStatus;
+    private string? statusNote;
+    private string? followUpNote;
+    private string? outcome;
+
+    protected override void OnParametersSet()
+    {
+        newStatus = Incident.Status;
+        statusNote = null;
+        followUpNote = null;
+        outcome = null;
+    }
+
+    private async Task ChangeStatusAsync()
+    {
+        await OnChangeStatus.InvokeAsync(new ChangeIncidentStatusDto
+        {
+            Status = newStatus,
+            Note = statusNote
+        });
+    }
+
+    private async Task AddFollowUpAsync()
+    {
+        await OnAddFollowUp.InvokeAsync(new CreateIncidentFollowUpDto
+        {
+            Note = followUpNote ?? string.Empty
+        });
+    }
+
+    private async Task CloseIncidentAsync()
+    {
+        await OnClose.InvokeAsync(new CloseIncidentDto
+        {
+            Outcome = outcome ?? string.Empty
+        });
+    }
+
+    private static string GetStatusClass(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.Open => "bg-primary",
+            IncidentStatus.UnderReview => "bg-info text-dark",
+            IncidentStatus.ActionRequired => "bg-warning text-dark",
+            IncidentStatus.Closed => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetStatusText(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.UnderReview => "Under review",
+            IncidentStatus.ActionRequired => "Action required",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetCategoryText(IncidentCategory category)
+    {
+        return category switch
+        {
+            IncidentCategory.ThreatOrViolence => "Threat or violence",
+            IncidentCategory.MedicationError => "Medication error",
+            IncidentCategory.MissingPerson => "Missing person",
+            IncidentCategory.PropertyDamage => "Property damage",
+            IncidentCategory.SafeguardingConcern => "Safeguarding concern",
+            _ => category.ToString()
+        };
+    }
+}

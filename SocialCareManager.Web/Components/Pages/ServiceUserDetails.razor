@@ -5,6 +5,7 @@
 @using SocialCareManager.Web.Services.Api
 @using SocialCareManager.Web.Components.ServiceUsers
 @using SocialCareManager.Web.Components.Medication
+@using SocialCareManager.Web.Components.Incident
 
 
 @inject DailyNoteService DailyNoteService
@@ -72,10 +73,11 @@ else
             Calendar
         </button>
 
-        <button class="record-tab disabled" disabled>
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            Incidents
-        </button>
+        <button class="record-tab @(activeTab == "incidents" ? "active" : "")"
+        @onclick="@(() => SetActiveTab("incidents"))">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    Incidents
+</button>
     </div>
 
     @if (activeTab == "profile")
@@ -153,10 +155,15 @@ else
     {
         <MedicationSection ServiceUserId="Id" />
     }
+    else if (activeTab == "incidents")
+{
+    <IncidentSection ServiceUserId="Id" />
+}
     else if (activeTab == "medicationdoses")
     {
         <MedicationAdministrationSection ServiceUserId="Id" />
     }
+
 }
 
 @code {

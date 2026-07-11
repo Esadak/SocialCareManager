@@ -1,0 +1,140 @@
+@using SocialCareManager.Web.Dtos
+
+<div class="card p-3 mb-4">
+    <h5 class="mb-2">
+        @(IsEditing ? "Edit incident" : "Report incident")
+    </h5>
+
+    <p class="text-muted">
+        Record what happened and any immediate actions taken.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">Short title</label>
+
+            <input class="form-control"
+                   @bind="Incident.Title"
+                   placeholder="Example: Fall in the hallway" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">When did it happen?</label>
+
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="Incident.OccurredAt" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Type of incident</label>
+
+            <select class="form-select" @bind="Incident.Category">
+                <option value="@IncidentCategory.Other">Other</option>
+                <option value="@IncidentCategory.Accident">Accident</option>
+                <option value="@IncidentCategory.Injury">Injury</option>
+                <option value="@IncidentCategory.ThreatOrViolence">
+                    Threat or violence
+                </option>
+                <option value="@IncidentCategory.MedicationError">
+                    Medication error
+                </option>
+                <option value="@IncidentCategory.MissingPerson">
+                    Missing person
+                </option>
+                <option value="@IncidentCategory.PropertyDamage">
+                    Property damage
+                </option>
+                <option value="@IncidentCategory.SafeguardingConcern">
+                    Safeguarding concern
+                </option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">How serious was it?</label>
+
+            <select class="form-select" @bind="Incident.Severity">
+                <option value="@IncidentSeverity.Low">Low</option>
+                <option value="@IncidentSeverity.Medium">Medium</option>
+                <option value="@IncidentSeverity.High">High</option>
+                <option value="@IncidentSeverity.Critical">Critical</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">What happened?</label>
+
+            <textarea class="form-control"
+                      rows="4"
+                      @bind="Incident.Description"
+                      placeholder="Describe the incident clearly and factually.">
+            </textarea>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">What was done immediately?</label>
+
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="Incident.ImmediateActions"
+                      placeholder="Describe actions taken to keep everyone safe.">
+            </textarea>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">People involved</label>
+
+            <input class="form-control"
+                   @bind="Incident.PeopleInvolved"
+                   placeholder="Example: Service user and two staff members" />
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       @bind="Incident.ManagerNotified" />
+
+                <label class="form-check-label">
+                    A manager has been notified
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success" @onclick="SaveAsync">
+            <i class="bi bi-check-circle"></i>
+            @(IsEditing ? "Save changes" : "Save incident")
+        </button>
+
+        <button class="btn btn-secondary" @onclick="CancelAsync">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public CreateIncidentDto Incident { get; set; } = new();
+
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task SaveAsync()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}
