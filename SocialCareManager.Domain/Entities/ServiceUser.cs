@@ -25,4 +25,7 @@ public class ServiceUser  : BaseEntity
 
     public ICollection<Incident> Incidents { get; set; }
     = new List<Incident>();
+
+    public ICollection<CalendarEvent> CalendarEvents { get; set; }
+    = new List<CalendarEvent>();
 }

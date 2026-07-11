@@ -37,6 +37,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<IncidentFollowUp> IncidentFollowUps =>
         Set<IncidentFollowUp>();
 
+    public DbSet<CalendarEvent> CalendarEvents =>
+    Set<CalendarEvent>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -188,6 +191,68 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(x => x.FollowedUpAt);
         });
 
+        modelBuilder.Entity<CalendarEvent>(entity =>
+{
+    entity.ToTable("CalendarEvents");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Title)
+        .HasMaxLength(200)
+        .IsRequired();
+
+    entity.Property(x => x.EventType)
+        .HasConversion<string>()
+        .HasMaxLength(40);
+
+    entity.Property(x => x.Status)
+        .HasConversion<string>()
+        .HasMaxLength(20);
+
+    entity.Property(x => x.Location)
+        .HasMaxLength(300);
+
+    entity.Property(x => x.Description)
+        .HasMaxLength(3000);
+
+    entity.Property(x => x.AssignedTo)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CompletedBy)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CancelledBy)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CancellationReason)
+        .HasMaxLength(1000);
+
+    entity.HasOne(x => x.ServiceUser)
+        .WithMany(x => x.CalendarEvents)
+        .HasForeignKey(x => x.ServiceUserId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasIndex(x => x.ServiceUserId);
+
+    entity.HasIndex(x => x.Status);
+
+    entity.HasIndex(x => x.EventType);
+
+    entity.HasIndex(x => x.StartAt);
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.StartAt
+    });
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.Status
+    });
+});
+
         // Matching query filters for required relationships
         modelBuilder.Entity<MedicationAdministration>()
             .HasQueryFilter(x =>
@@ -205,5 +270,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 !x.IsDeleted &&
                 !x.Incident.IsDeleted &&
                 !x.Incident.ServiceUser.IsDeleted);
+
+        modelBuilder.Entity<CalendarEvent>()
+              .HasQueryFilter(x =>
+              !x.IsDeleted &&
+              !x.ServiceUser.IsDeleted);
     }
 }
