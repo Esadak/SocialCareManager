@@ -70,12 +70,23 @@ else if (carePlan is not null)
         <div class="care-plan-summary mb-4">
 
             <div class="care-plan-summary-item">
-                <span>Status</span>
-                <strong class="text-success">
-                    <i class="bi bi-circle-fill me-1"></i>
-                    Active
-                </strong>
-            </div>
+    <span>Status</span>
+
+    @if (carePlan!.IsActive)
+    {
+        <strong class="text-success">
+            <i class="bi bi-circle-fill me-1"></i>
+            Active
+        </strong>
+    }
+    else
+    {
+        <strong class="text-secondary">
+            <i class="bi bi-circle-fill me-1"></i>
+            Archived
+        </strong>
+    }
+</div>
 
             <div class="care-plan-summary-item">
                 <span>Review</span>
@@ -173,17 +184,19 @@ else if (carePlan is not null)
     }
 
     private async Task CreateCarePlan()
-    {
-        var success = await CarePlanService.CreateAsync(ServiceUserId, newCarePlan);
+{
+    var createdCarePlan = await CarePlanService.CreateAsync(
+        ServiceUserId,
+        newCarePlan);
 
-        if (success)
-        {
-            isCreating = false;
-            newCarePlan = new CreateCarePlanDto();
+    if (createdCarePlan is null)
+        return;
 
-            await LoadCarePlan();
-        }
-    }
+    isCreating = false;
+    newCarePlan = new CreateCarePlanDto();
+
+    await LoadCarePlan();
+}
 
     private string GetReviewStatusText()
     {

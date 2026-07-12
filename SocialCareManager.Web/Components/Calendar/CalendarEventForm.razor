@@ -1,0 +1,162 @@
+@using SocialCareManager.Web.Dtos.Calendar
+
+<div class="card p-3 mb-4">
+    <h5 class="mb-2">
+        @(IsEditing ? "Edit calendar event" : "Add calendar event")
+    </h5>
+
+    <p class="text-muted">
+        Plan an appointment, meeting or activity.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">Title</label>
+
+            <input class="form-control"
+                   @bind="CalendarEvent.Title"
+                   placeholder="Example: Doctor appointment" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Type</label>
+
+            <select class="form-select"
+                    @bind="CalendarEvent.EventType">
+                <option value="@CalendarEventType.Other">Other</option>
+                <option value="@CalendarEventType.Appointment">
+                    Appointment
+                </option>
+                <option value="@CalendarEventType.DoctorVisit">
+                    Doctor visit
+                </option>
+                <option value="@CalendarEventType.DentistVisit">
+                    Dentist visit
+                </option>
+                <option value="@CalendarEventType.Meeting">
+                    Meeting
+                </option>
+                <option value="@CalendarEventType.SipMeeting">
+                    SIP meeting
+                </option>
+                <option value="@CalendarEventType.CarePlanReview">
+                    Care plan review
+                </option>
+                <option value="@CalendarEventType.Activity">
+                    Activity
+                </option>
+                <option value="@CalendarEventType.HomeVisit">
+                    Home visit
+                </option>
+                <option value="@CalendarEventType.Transport">
+                    Transport
+                </option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       @bind="CalendarEvent.IsAllDay" />
+
+                <label class="form-check-label">
+                    This is an all-day event
+                </label>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starts</label>
+
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="CalendarEvent.StartAt" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Ends</label>
+
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="CalendarEvent.EndAt" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Location</label>
+
+            <input class="form-control"
+                   @bind="CalendarEvent.Location"
+                   placeholder="Example: Health centre" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Responsible staff</label>
+
+            <input class="form-control"
+                   @bind="CalendarEvent.AssignedTo"
+                   placeholder="Name or email" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Reminder</label>
+
+            <select class="form-select"
+                    @bind="CalendarEvent.ReminderMinutesBefore">
+                <option value="">No reminder</option>
+                <option value="15">15 minutes before</option>
+                <option value="30">30 minutes before</option>
+                <option value="60">1 hour before</option>
+                <option value="120">2 hours before</option>
+                <option value="1440">1 day before</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Additional information</label>
+
+            <textarea class="form-control"
+                      rows="3"
+                      @bind="CalendarEvent.Description"
+                      placeholder="Add useful details about the event.">
+            </textarea>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-success"
+                @onclick="SaveAsync">
+            <i class="bi bi-check-circle"></i>
+            @(IsEditing ? "Save changes" : "Save event")
+        </button>
+
+        <button class="btn btn-secondary"
+                @onclick="CancelAsync">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public CreateCalendarEventDto CalendarEvent { get; set; } = new();
+
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task SaveAsync()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

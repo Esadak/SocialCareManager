@@ -17,6 +17,8 @@ builder.Services.AddScoped<CarePlanService>();
 builder.Services.AddScoped<MedicationService>();
 builder.Services.AddScoped<MedicationAdministrationService>();
 builder.Services.AddScoped<IncidentService>();
+builder.Services.AddScoped<CalendarEventService>();
+builder.Services.AddScoped<CalendarOverviewService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

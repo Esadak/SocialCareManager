@@ -60,6 +60,29 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Medication>()
             .HasQueryFilter(x => !x.IsDeleted);
 
+        modelBuilder.Entity<CarePlan>(entity =>
+{
+    entity.Property(x => x.ArchivedBy)
+        .HasMaxLength(256);
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.IsActive
+    });
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.VersionNumber
+    });
+
+    entity.HasOne<CarePlan>()
+        .WithMany()
+        .HasForeignKey(x => x.PreviousVersionId)
+        .OnDelete(DeleteBehavior.Restrict);
+});
+
         // Medication Administration
         modelBuilder.Entity<MedicationAdministration>(entity =>
         {

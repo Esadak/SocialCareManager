@@ -1,0 +1,494 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos.Calendar
+@using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Services.Api
+
+@inject CalendarEventService CalendarEventService
+@inject AuthService AuthService
+@inject CalendarOverviewService CalendarOverviewService
+@inject NavigationManager Navigation
+
+<div class="section-card">
+    <ActionToolbar
+        Title="Calendar"
+        Subtitle="Plan appointments, meetings and activities.">
+
+        <Actions>
+            @if (events.Count > 0)
+            {
+                <button class="btn btn-primary"
+                        @onclick="OpenCreateForm">
+                    <i class="bi bi-plus-circle"></i>
+                    Add event
+                </button>
+            }
+        </Actions>
+    </ActionToolbar>
+
+    <div class="btn-group mb-4" role="group">
+    <button class="btn @(activeView == "schedule"
+        ? "btn-primary"
+        : "btn-outline-primary")"
+            @onclick="@(() => SetView("schedule"))">
+        <i class="bi bi-calendar-week"></i>
+        Schedule
+    </button>
+
+    <button class="btn @(activeView == "events"
+        ? "btn-primary"
+        : "btn-outline-primary")"
+            @onclick="@(() => SetView("events"))">
+        <i class="bi bi-calendar-event"></i>
+        Manage events
+    </button>
+</div>
+
+    <div class="card p-3 mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">From</label>
+
+                <input type="date"
+                       class="form-control"
+                       @bind="filterFrom" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">To</label>
+
+                <input type="date"
+                       class="form-control"
+                       @bind="filterTo" />
+            </div>
+
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary"
+                            @onclick="ApplyFilterAsync">
+                        Apply filter
+                    </button>
+
+                    <button class="btn btn-outline-secondary"
+                            @onclick="ShowAllAsync">
+                        Show all
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (showForm)
+    {
+        <CalendarEventForm
+            CalendarEvent="calendarEventForm"
+            IsEditing="isEditing"
+            OnSave="SaveCalendarEventAsync"
+            OnCancel="CloseForm" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isLoading)
+{
+    <p>Loading calendar...</p>
+}
+else if (activeView == "schedule")
+{
+    <CalendarOverviewList
+        Items="overviewItems"
+        OnOpen="OpenOverviewItem" />
+}
+else
+{
+    <CalendarEventList
+        Events="events"
+        SelectedEventId="selectedEvent?.Id"
+        CanDelete="AuthService.IsAdmin"
+        OnAdd="OpenCreateForm"
+        OnSelect="SelectEvent"
+        OnEdit="StartEdit"
+        OnDelete="ConfirmDelete" />
+
+    @if (selectedEvent is not null && !showForm)
+    {
+        <CalendarEventDetails
+            CalendarEvent="selectedEvent"
+            OnComplete="CompleteEventAsync"
+            OnCancel="CancelEventAsync"
+            OnReopen="ReopenEventAsync" />
+    }
+}
+
+    <ConfirmDialog
+        IsVisible="@(eventToDelete is not null)"
+        Title="Delete calendar event?"
+        Message="@GetDeleteMessage()"
+        Icon="bi bi-trash"
+        ConfirmText="Delete"
+        CancelText="Cancel"
+        ConfirmButtonClass="btn-danger"
+        OnConfirm="DeleteEventAsync"
+        OnCancel="CancelDelete" />
+</div>
+
+@code {
+    [Parameter]
+    public Guid ServiceUserId { get; set; }
+
+    private List<CalendarEventDto> events = new();
+
+    private CalendarEventDto? selectedEvent;
+    private CalendarEventDto? eventToDelete;
+
+    private CreateCalendarEventDto calendarEventForm = new();
+
+    private Guid? editingEventId;
+
+    private DateTime filterFrom = DateTime.Today.AddDays(-7);
+    private DateTime filterTo = DateTime.Today.AddMonths(1);
+
+    private bool isLoading = true;
+    private bool showForm;
+    private bool isEditing;
+
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync(Guid? selectEventId = null)
+{
+    isLoading = true;
+    errorMessage = null;
+
+    var toDate = filterTo.Date.AddDays(1).AddTicks(-1);
+
+    events = await CalendarEventService.GetAllAsync(
+        ServiceUserId,
+        filterFrom,
+        toDate);
+
+    overviewItems = await CalendarOverviewService.GetAllAsync(
+        ServiceUserId,
+        filterFrom,
+        toDate);
+
+    if (selectEventId.HasValue)
+    {
+        selectedEvent = events.FirstOrDefault(
+            x => x.Id == selectEventId.Value);
+    }
+    else if (selectedEvent is not null)
+    {
+        selectedEvent = events.FirstOrDefault(
+            x => x.Id == selectedEvent.Id);
+    }
+
+    isLoading = false;
+}
+
+private void OpenOverviewItem(CalendarOverviewItemDto item)
+{
+    if (item.Source == CalendarItemSource.MedicationDose)
+    {
+        Navigation.NavigateTo(
+            $"/serviceusers/{ServiceUserId}?tab=medicationdoses");
+
+        return;
+    }
+
+    if (item.Source == CalendarItemSource.CarePlanReview)
+    {
+        Navigation.NavigateTo(
+            $"/serviceusers/{ServiceUserId}?tab=careplan");
+
+        return;
+    }
+
+    if (item.Source == CalendarItemSource.CalendarEvent)
+    {
+        activeView = "events";
+
+        selectedEvent = events.FirstOrDefault(
+            x => x.Id == item.SourceId);
+    }
+}
+
+    private async Task ApplyFilterAsync()
+    {
+        selectedEvent = null;
+        await LoadEventsAsync();
+    }
+
+    private async Task ShowAllAsync()
+    {
+        filterFrom = DateTime.Today.AddYears(-5);
+        filterTo = DateTime.Today.AddYears(5);
+
+        selectedEvent = null;
+        await LoadEventsAsync();
+    }
+
+    private void OpenCreateForm()
+    {
+        activeView = "events";
+        errorMessage = null;
+        selectedEvent = null;
+        editingEventId = null;
+        isEditing = false;
+
+        calendarEventForm = new CreateCalendarEventDto
+        {
+            StartAt = DateTime.Now,
+            EndAt = DateTime.Now.AddHours(1),
+            EventType = CalendarEventType.Other
+        };
+
+        showForm = true;
+    }
+
+    private void StartEdit(CalendarEventDto calendarEvent)
+    {
+        errorMessage = null;
+        selectedEvent = null;
+
+        editingEventId = calendarEvent.Id;
+        isEditing = true;
+        showForm = true;
+
+        calendarEventForm = new CreateCalendarEventDto
+        {
+            Title = calendarEvent.Title,
+            EventType = calendarEvent.EventType,
+            StartAt = calendarEvent.StartAt.ToLocalTime(),
+            EndAt = calendarEvent.EndAt.ToLocalTime(),
+            IsAllDay = calendarEvent.IsAllDay,
+            Location = calendarEvent.Location,
+            Description = calendarEvent.Description,
+            AssignedTo = calendarEvent.AssignedTo,
+            ReminderMinutesBefore =
+                calendarEvent.ReminderMinutesBefore
+        };
+    }
+
+    private void CloseForm()
+    {
+        errorMessage = null;
+        showForm = false;
+        isEditing = false;
+        editingEventId = null;
+        calendarEventForm = new CreateCalendarEventDto();
+    }
+
+    private async Task SaveCalendarEventAsync()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(calendarEventForm.Title))
+        {
+            errorMessage = "Enter a title.";
+            return;
+        }
+
+        if (calendarEventForm.EndAt <= calendarEventForm.StartAt)
+        {
+            errorMessage =
+                "The end time must be after the start time.";
+            return;
+        }
+
+        Guid? savedEventId;
+
+        if (isEditing && editingEventId.HasValue)
+        {
+            var editDto = new EditCalendarEventDto
+            {
+                Title = calendarEventForm.Title,
+                EventType = calendarEventForm.EventType,
+                StartAt = calendarEventForm.StartAt,
+                EndAt = calendarEventForm.EndAt,
+                IsAllDay = calendarEventForm.IsAllDay,
+                Location = calendarEventForm.Location,
+                Description = calendarEventForm.Description,
+                AssignedTo = calendarEventForm.AssignedTo,
+                ReminderMinutesBefore =
+                    calendarEventForm.ReminderMinutesBefore
+            };
+
+            var updated = await CalendarEventService.UpdateAsync(
+                ServiceUserId,
+                editingEventId.Value,
+                editDto);
+
+            if (!updated)
+            {
+                errorMessage =
+                    "The calendar event could not be updated.";
+                return;
+            }
+
+            savedEventId = editingEventId.Value;
+        }
+        else
+        {
+            var created = await CalendarEventService.CreateAsync(
+                ServiceUserId,
+                calendarEventForm);
+
+            if (created is null)
+            {
+                errorMessage =
+                    "The calendar event could not be created.";
+                return;
+            }
+
+            savedEventId = created.Id;
+        }
+
+        CloseForm();
+        await LoadEventsAsync(savedEventId);
+    }
+
+    private void SelectEvent(CalendarEventDto calendarEvent)
+    {
+        errorMessage = null;
+        showForm = false;
+        selectedEvent = calendarEvent;
+    }
+
+    private async Task CompleteEventAsync()
+    {
+        if (selectedEvent is null)
+            return;
+
+        errorMessage = null;
+
+        var completed = await CalendarEventService.CompleteAsync(
+            ServiceUserId,
+            selectedEvent.Id);
+
+        if (!completed)
+        {
+            errorMessage =
+                "The calendar event could not be completed.";
+            return;
+        }
+
+        await LoadEventsAsync(selectedEvent.Id);
+    }
+
+    private async Task CancelEventAsync(
+        CancelCalendarEventDto dto)
+    {
+        if (selectedEvent is null)
+            return;
+
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(dto.Reason))
+        {
+            errorMessage =
+                "Enter why the event is being cancelled.";
+            return;
+        }
+
+        var cancelled = await CalendarEventService.CancelAsync(
+            ServiceUserId,
+            selectedEvent.Id,
+            dto);
+
+        if (!cancelled)
+        {
+            errorMessage =
+                "The calendar event could not be cancelled.";
+            return;
+        }
+
+        await LoadEventsAsync(selectedEvent.Id);
+    }
+
+    private async Task ReopenEventAsync(
+        ReopenCalendarEventDto dto)
+    {
+        if (selectedEvent is null)
+            return;
+
+        errorMessage = null;
+
+        var reopened = await CalendarEventService.ReopenAsync(
+            ServiceUserId,
+            selectedEvent.Id,
+            dto);
+
+        if (!reopened)
+        {
+            errorMessage =
+                "The calendar event could not be reopened.";
+            return;
+        }
+
+        await LoadEventsAsync(selectedEvent.Id);
+    }
+
+    private void ConfirmDelete(CalendarEventDto calendarEvent)
+    {
+        errorMessage = null;
+        eventToDelete = calendarEvent;
+    }
+
+    private void CancelDelete()
+    {
+        eventToDelete = null;
+    }
+
+    private async Task DeleteEventAsync()
+    {
+        if (eventToDelete is null)
+            return;
+
+        var deleted = await CalendarEventService.DeleteAsync(
+            ServiceUserId,
+            eventToDelete.Id);
+
+        if (!deleted)
+        {
+            errorMessage =
+                "The calendar event could not be deleted.";
+            return;
+        }
+
+        if (selectedEvent?.Id == eventToDelete.Id)
+        {
+            selectedEvent = null;
+        }
+
+        eventToDelete = null;
+        await LoadEventsAsync();
+    }
+
+    private string GetDeleteMessage()
+    {
+        if (eventToDelete is null)
+            return string.Empty;
+
+        return $"{eventToDelete.Title} will no longer be visible, but the record will remain in the system.";
+    }
+
+    private List<CalendarOverviewItemDto> overviewItems = new();
+
+    private string activeView = "schedule";
+
+    private void SetView(string view)
+{
+    activeView = view;
+    selectedEvent = null;
+    showForm = false;
+}
+}

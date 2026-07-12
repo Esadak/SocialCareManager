@@ -1,0 +1,288 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos.Calendar
+
+<div class="card p-4 mt-4">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h4 class="mb-1">@CalendarEvent.Title</h4>
+
+            <div class="text-muted">
+                @GetDateText(CalendarEvent)
+            </div>
+        </div>
+
+        <span class="badge @GetStatusClass(CalendarEvent.Status)">
+            @GetStatusText(CalendarEvent.Status)
+        </span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="small text-muted">Type</div>
+            <div class="fw-semibold">
+                @GetEventTypeText(CalendarEvent.EventType)
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="small text-muted">Location</div>
+            <div>
+                @(string.IsNullOrWhiteSpace(CalendarEvent.Location)
+                    ? "Not specified"
+                    : CalendarEvent.Location)
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="small text-muted">Responsible staff</div>
+            <div>
+                @(string.IsNullOrWhiteSpace(CalendarEvent.AssignedTo)
+                    ? "Not assigned"
+                    : CalendarEvent.AssignedTo)
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="small text-muted">Reminder</div>
+            <div>@GetReminderText(CalendarEvent.ReminderMinutesBefore)</div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(CalendarEvent.Description))
+        {
+            <div class="col-12">
+                <div class="small text-muted">
+                    Additional information
+                </div>
+
+                <div>@CalendarEvent.Description</div>
+            </div>
+        }
+    </div>
+
+    @if (CalendarEvent.Status == CalendarEventStatus.Scheduled)
+    {
+        <div class="d-flex gap-2 flex-wrap mb-4">
+            <button class="btn btn-success"
+                    @onclick="CompleteAsync">
+                <i class="bi bi-check-circle"></i>
+                Mark completed
+            </button>
+
+            <button class="btn btn-outline-danger"
+                    @onclick="ShowCancelForm">
+                <i class="bi bi-x-circle"></i>
+                Cancel event
+            </button>
+        </div>
+
+        @if (showCancellationForm)
+        {
+            <div class="border rounded p-3 mb-4">
+                <label class="form-label">
+                    Why is the event being cancelled?
+                </label>
+
+                <textarea class="form-control"
+                          rows="3"
+                          @bind="cancellationReason">
+                </textarea>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button class="btn btn-danger"
+                            @onclick="CancelAsync">
+                        Confirm cancellation
+                    </button>
+
+                    <button class="btn btn-secondary"
+                            @onclick="HideCancelForm">
+                        Keep event
+                    </button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        @if (CalendarEvent.Status == CalendarEventStatus.Completed)
+        {
+            <div class="alert alert-success">
+                <strong>Event completed</strong>
+
+                @if (CalendarEvent.CompletedAt.HasValue)
+                {
+                    <div class="small mt-2">
+                        Completed
+                        @(CalendarEvent.CompletedAt.Value
+                            .ToLocalTime()
+                            .ToString("yyyy-MM-dd HH:mm"))
+                        by
+                        @DisplayUser(CalendarEvent.CompletedBy)
+                    </div>
+                }
+            </div>
+        }
+
+        @if (CalendarEvent.Status == CalendarEventStatus.Cancelled)
+        {
+            <div class="alert alert-secondary">
+                <strong>Event cancelled</strong>
+
+                @if (!string.IsNullOrWhiteSpace(
+                    CalendarEvent.CancellationReason))
+                {
+                    <div class="mt-2">
+                        @CalendarEvent.CancellationReason
+                    </div>
+                }
+
+                @if (CalendarEvent.CancelledAt.HasValue)
+                {
+                    <div class="small mt-2">
+                        Cancelled
+                        @(CalendarEvent.CancelledAt.Value
+                            .ToLocalTime()
+                            .ToString("yyyy-MM-dd HH:mm"))
+                        by
+                        @DisplayUser(CalendarEvent.CancelledBy)
+                    </div>
+                }
+            </div>
+        }
+
+        <button class="btn btn-outline-primary mb-4"
+                @onclick="ReopenAsync">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reopen event
+        </button>
+    }
+
+    <AuditInfo CreatedAt="CalendarEvent.CreatedAt"
+               CreatedBy="@CalendarEvent.CreatedBy"
+               UpdatedAt="CalendarEvent.UpdatedAt"
+               UpdatedBy="@CalendarEvent.UpdatedBy" />
+</div>
+
+@code {
+    [Parameter]
+    public CalendarEventDto CalendarEvent { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnComplete { get; set; }
+
+    [Parameter]
+    public EventCallback<CancelCalendarEventDto> OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback<ReopenCalendarEventDto> OnReopen { get; set; }
+
+    private bool showCancellationForm;
+    private string? cancellationReason;
+
+    protected override void OnParametersSet()
+    {
+        showCancellationForm = false;
+        cancellationReason = null;
+    }
+
+    private async Task CompleteAsync()
+    {
+        await OnComplete.InvokeAsync();
+    }
+
+    private void ShowCancelForm()
+    {
+        showCancellationForm = true;
+    }
+
+    private void HideCancelForm()
+    {
+        showCancellationForm = false;
+        cancellationReason = null;
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync(new CancelCalendarEventDto
+        {
+            Reason = cancellationReason ?? string.Empty
+        });
+    }
+
+    private async Task ReopenAsync()
+    {
+        await OnReopen.InvokeAsync(new ReopenCalendarEventDto());
+    }
+
+    private static string DisplayUser(string? user)
+    {
+        return string.IsNullOrWhiteSpace(user)
+            ? "System"
+            : user;
+    }
+
+    private static string GetDateText(CalendarEventDto calendarEvent)
+    {
+        if (calendarEvent.IsAllDay)
+        {
+            return calendarEvent.StartAt
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd") + " · All day";
+        }
+
+        var start = calendarEvent.StartAt.ToLocalTime();
+        var end = calendarEvent.EndAt.ToLocalTime();
+
+        return $"{start:yyyy-MM-dd HH:mm} – {end:yyyy-MM-dd HH:mm}";
+    }
+
+    private static string GetStatusClass(CalendarEventStatus status)
+    {
+        return status switch
+        {
+            CalendarEventStatus.Scheduled => "bg-primary",
+            CalendarEventStatus.Completed => "bg-success",
+            CalendarEventStatus.Cancelled => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetStatusText(CalendarEventStatus status)
+    {
+        return status switch
+        {
+            CalendarEventStatus.Scheduled => "Scheduled",
+            CalendarEventStatus.Completed => "Completed",
+            CalendarEventStatus.Cancelled => "Cancelled",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetEventTypeText(CalendarEventType eventType)
+    {
+        return eventType switch
+        {
+            CalendarEventType.DoctorVisit => "Doctor visit",
+            CalendarEventType.DentistVisit => "Dentist visit",
+            CalendarEventType.SipMeeting => "SIP meeting",
+            CalendarEventType.CarePlanReview => "Care plan review",
+            CalendarEventType.HomeVisit => "Home visit",
+            _ => eventType.ToString()
+        };
+    }
+
+    private static string GetReminderText(int? minutes)
+    {
+        if (!minutes.HasValue)
+            return "No reminder";
+
+        return minutes.Value switch
+        {
+            15 => "15 minutes before",
+            30 => "30 minutes before",
+            60 => "1 hour before",
+            120 => "2 hours before",
+            1440 => "1 day before",
+            _ => $"{minutes.Value} minutes before"
+        };
+    }
+}

@@ -26,10 +26,13 @@ public class CarePlanService
     private void SetAuthorization()
     {
         _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _authService.AccessToken);
+            new AuthenticationHeaderValue(
+                "Bearer",
+                _authService.AccessToken);
     }
 
-    public async Task<CarePlanDto?> GetActiveAsync(Guid serviceUserId)
+    public async Task<CarePlanDto?> GetActiveAsync(
+        Guid serviceUserId)
     {
         SetAuthorization();
 
@@ -44,14 +47,61 @@ public class CarePlanService
         }
     }
 
-    public async Task<bool> CreateAsync(Guid serviceUserId, CreateCarePlanDto dto)
-{
-    SetAuthorization();
+    public async Task<List<CarePlanDto>> GetHistoryAsync(
+        Guid serviceUserId)
+    {
+        SetAuthorization();
 
-    var response = await _httpClient.PostAsJsonAsync(
-        $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans",
-        dto);
+        var result = await _httpClient.GetFromJsonAsync<List<CarePlanDto>>(
+            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/history");
 
-    return response.IsSuccessStatusCode;
-}
+        return result ?? new List<CarePlanDto>();
+    }
+
+    public async Task<CarePlanDto?> CreateAsync(
+        Guid serviceUserId,
+        CreateCarePlanDto dto)
+    {
+        SetAuthorization();
+
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans",
+            dto);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<CarePlanDto>();
+    }
+
+    public async Task<bool> UpdateCurrentAsync(
+        Guid serviceUserId,
+        Guid carePlanId,
+        UpdateCarePlanDto dto)
+    {
+        SetAuthorization();
+
+        var response = await _httpClient.PutAsJsonAsync(
+            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}",
+            dto);
+
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<CarePlanDto?> CreateNewVersionAsync(
+        Guid serviceUserId,
+        Guid carePlanId,
+        CreateCarePlanDto dto)
+    {
+        SetAuthorization();
+
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}/new-version",
+            dto);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<CarePlanDto>();
+    }
 }

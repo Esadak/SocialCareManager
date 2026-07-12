@@ -1,0 +1,178 @@
+@using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Dtos.Calendar
+
+@if (Events.Count == 0)
+{
+    <EmptyState
+        Icon="bi bi-calendar-event"
+        Title="No calendar events"
+        Description="There are no appointments or activities in this period."
+        ShowButton="true"
+        ButtonText="Add calendar event"
+        ButtonIcon="bi bi-plus-circle"
+        OnButtonClick="OnAdd" />
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Date and time</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var calendarEvent in Events)
+                {
+                    <tr class="@(SelectedEventId == calendarEvent.Id
+                        ? "table-active"
+                        : "")">
+
+                        <td>
+                            <button class="btn btn-link p-0 text-start text-decoration-none"
+                                    @onclick="() => OnSelect.InvokeAsync(calendarEvent)">
+                                <span class="fw-semibold">
+                                    @calendarEvent.Title
+                                </span>
+                            </button>
+
+                            @if (!string.IsNullOrWhiteSpace(calendarEvent.AssignedTo))
+                            {
+                                <div class="small text-muted">
+                                    Responsible: @calendarEvent.AssignedTo
+                                </div>
+                            }
+                        </td>
+
+                        <td>
+                            @GetDateText(calendarEvent)
+                        </td>
+
+                        <td>
+                            @GetEventTypeText(calendarEvent.EventType)
+                        </td>
+
+                        <td>
+                            @(string.IsNullOrWhiteSpace(calendarEvent.Location)
+                                ? "Not specified"
+                                : calendarEvent.Location)
+                        </td>
+
+                        <td>
+                            <span class="badge @GetStatusClass(calendarEvent.Status)">
+                                @GetStatusText(calendarEvent.Status)
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @if (calendarEvent.Status ==
+                                     CalendarEventStatus.Scheduled)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => OnEdit.InvokeAsync(calendarEvent)">
+                                        <i class="bi bi-pencil"></i>
+                                        Edit
+                                    </button>
+                                }
+
+                                @if (CanDelete)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => OnDelete.InvokeAsync(calendarEvent)">
+                                        <i class="bi bi-trash"></i>
+                                        Delete
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<CalendarEventDto> Events { get; set; } = new();
+
+    [Parameter]
+    public Guid? SelectedEventId { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<CalendarEventDto> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<CalendarEventDto> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<CalendarEventDto> OnDelete { get; set; }
+
+    private static string GetDateText(CalendarEventDto calendarEvent)
+    {
+        if (calendarEvent.IsAllDay)
+        {
+            return calendarEvent.StartAt
+                .ToLocalTime()
+                .ToString("yyyy-MM-dd") + " · All day";
+        }
+
+        var start = calendarEvent.StartAt.ToLocalTime();
+        var end = calendarEvent.EndAt.ToLocalTime();
+
+        if (start.Date == end.Date)
+        {
+            return $"{start:yyyy-MM-dd HH:mm}–{end:HH:mm}";
+        }
+
+        return $"{start:yyyy-MM-dd HH:mm} – {end:yyyy-MM-dd HH:mm}";
+    }
+
+    private static string GetStatusClass(CalendarEventStatus status)
+    {
+        return status switch
+        {
+            CalendarEventStatus.Scheduled => "bg-primary",
+            CalendarEventStatus.Completed => "bg-success",
+            CalendarEventStatus.Cancelled => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string GetStatusText(CalendarEventStatus status)
+    {
+        return status switch
+        {
+            CalendarEventStatus.Scheduled => "Scheduled",
+            CalendarEventStatus.Completed => "Completed",
+            CalendarEventStatus.Cancelled => "Cancelled",
+            _ => status.ToString()
+        };
+    }
+
+    private static string GetEventTypeText(CalendarEventType eventType)
+    {
+        return eventType switch
+        {
+            CalendarEventType.DoctorVisit => "Doctor visit",
+            CalendarEventType.DentistVisit => "Dentist visit",
+            CalendarEventType.SipMeeting => "SIP meeting",
+            CalendarEventType.CarePlanReview => "Care plan review",
+            CalendarEventType.HomeVisit => "Home visit",
+            _ => eventType.ToString()
+        };
+    }
+}

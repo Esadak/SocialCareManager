@@ -1,6 +1,6 @@
-namespace SocialCareManager.Web.Dtos;
+namespace SocialCareManager.Api.Dtos;
 
-public class CarePlanDto
+public class CarePlanHistoryDto
 {
     public Guid Id { get; set; }
     public Guid ServiceUserId { get; set; }
@@ -12,6 +12,12 @@ public class CarePlanDto
 
     public DateTime ReviewDate { get; set; }
     public bool IsActive { get; set; }
+
+    public int VersionNumber { get; set; }
+    public Guid? PreviousVersionId { get; set; }
+
+    public DateTime? ArchivedAt { get; set; }
+    public string? ArchivedBy { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

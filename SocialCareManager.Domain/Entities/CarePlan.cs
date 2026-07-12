@@ -24,6 +24,14 @@ public class CarePlan : BaseEntity
     // When should this plan be reviewed?
     public DateTime ReviewDate { get; set; }
 
+    public int VersionNumber { get; set; } = 1;
+
+   public Guid? PreviousVersionId { get; set; }
+
+   public DateTime? ArchivedAt { get; set; }
+
+  public string? ArchivedBy { get; set; }
+
     // Only one active plan should normally exist
     public bool IsActive { get; set; } = true;
 }

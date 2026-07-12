@@ -6,6 +6,7 @@
 @using SocialCareManager.Web.Components.ServiceUsers
 @using SocialCareManager.Web.Components.Medication
 @using SocialCareManager.Web.Components.Incident
+@using SocialCareManager.Web.Components.Calendar
 
 
 @inject DailyNoteService DailyNoteService
@@ -68,10 +69,11 @@ else
             Medication Doses
         </button>
 
-        <button class="record-tab disabled" disabled>
-            <i class="bi bi-calendar-event"></i>
-            Calendar
-        </button>
+        <button class="record-tab @(activeTab == "calendar" ? "active" : "")"
+        @onclick="@(() => SetActiveTab("calendar"))">
+    <i class="bi bi-calendar-event"></i>
+    Calendar
+</button>
 
         <button class="record-tab @(activeTab == "incidents" ? "active" : "")"
         @onclick="@(() => SetActiveTab("incidents"))">
@@ -164,6 +166,11 @@ else
         <MedicationAdministrationSection ServiceUserId="Id" />
     }
 
+    else if (activeTab == "calendar")
+{
+    <CalendarSection ServiceUserId="Id" />
+}
+
 }
 
 @code {
@@ -188,4 +195,29 @@ else
     {
         activeTab = tab;
     }
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? RequestedTab { get; set; }
+
+    protected override void OnParametersSet()
+{
+    if (IsValidTab(RequestedTab))
+    {
+        activeTab = RequestedTab!;
+    }
+}
+
+
+    private static bool IsValidTab(string? tab)
+{
+    return tab is
+        "profile" or
+        "careplan" or
+        "notes" or
+        "nextofkin" or
+        "medication" or
+        "medicationdoses" or
+        "calendar" or
+        "incidents";
+}
 }

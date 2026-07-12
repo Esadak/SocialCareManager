@@ -12,6 +12,7 @@ builder.Services.AddScoped<MedicationValidator>();
 builder.Services.AddScoped<MedicationAdministrationValidator>();
 builder.Services.AddScoped<IncidentValidator>();
 builder.Services.AddScoped<CalendarEventValidator>();
+builder.Services.AddScoped<CarePlanValidator>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(

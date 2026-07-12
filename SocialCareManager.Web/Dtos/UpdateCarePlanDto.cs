@@ -1,6 +1,6 @@
-namespace SocialCareManager.Api.Dtos;
+namespace SocialCareManager.Web.Dtos;
 
-public class CreateCarePlanDto
+public class UpdateCarePlanDto
 {
     public string Goal { get; set; } = string.Empty;
 
@@ -11,6 +11,4 @@ public class CreateCarePlanDto
     public string RiskAssessment { get; set; } = string.Empty;
 
     public DateTime ReviewDate { get; set; }
-
-    public bool IsActive { get; set; } = true;
 }

@@ -1,0 +1,94 @@
+@using SocialCareManager.Web.Dtos
+
+@if (History.Count > 0)
+{
+    <div class="card p-4 mt-4">
+        <div class="mb-3">
+            <h4 class="mb-1">
+                <i class="bi bi-clock-history"></i>
+                Version history
+            </h4>
+
+            <p class="text-muted mb-0">
+                Previous and current versions of the care plan.
+            </p>
+        </div>
+
+        @foreach (var plan in History
+            .OrderByDescending(x => x.VersionNumber))
+        {
+            <div class="border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>
+                                Version @plan.VersionNumber
+                            </strong>
+
+                            @if (plan.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Current
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Archived
+                                </span>
+                            }
+                        </div>
+
+                        <div class="small text-muted mt-2">
+                            Created
+                            @(plan.CreatedAt
+                                .ToLocalTime()
+                                .ToString("yyyy-MM-dd HH:mm"))
+                            by
+                            @DisplayUser(plan.CreatedBy)
+                        </div>
+
+                        @if (plan.ArchivedAt.HasValue)
+                        {
+                            <div class="small text-muted mt-1">
+                                Archived
+                                @(plan.ArchivedAt.Value
+                                    .ToLocalTime()
+                                    .ToString("yyyy-MM-dd HH:mm"))
+                                by
+                                @DisplayUser(plan.ArchivedBy)
+                            </div>
+                        }
+
+                        <div class="small mt-2">
+                            Review date:
+                            @(plan.ReviewDate
+                            .ToLocalTime()
+                             .ToString("yyyy-MM-dd"))
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-primary"
+                            @onclick="() => OnSelect.InvokeAsync(plan)">
+                        View version
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<CarePlanDto> History { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<CarePlanDto> OnSelect { get; set; }
+
+    private static string DisplayUser(string? user)
+    {
+        return string.IsNullOrWhiteSpace(user)
+            ? "System"
+            : user;
+    }
+}
