@@ -1,0 +1,51 @@
+<button class="insight-card insight-card-@Severity"
+        @onclick="OpenAsync">
+    <div class="insight-card-icon">
+        <i class="@Icon"></i>
+    </div>
+
+    <div class="insight-card-content">
+        <div class="d-flex justify-content-between gap-3">
+            <div class="insight-card-title">
+                @Title
+            </div>
+
+            <div class="insight-card-value">
+                @Value
+            </div>
+        </div>
+
+        <div class="insight-card-description">
+            @Description
+        </div>
+    </div>
+
+    <div class="insight-card-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</button>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public int Value { get; set; }
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Icon { get; set; } = "bi bi-info-circle";
+
+    [Parameter]
+    public string Severity { get; set; } = "success";
+
+    [Parameter]
+    public EventCallback OnOpen { get; set; }
+
+    private async Task OpenAsync()
+    {
+        await OnOpen.InvokeAsync();
+    }
+}

@@ -1,228 +1,623 @@
 @using SocialCareManager.Web.Components.Common
+@using SocialCareManager.Web.Components.CarePlans
 @using SocialCareManager.Web.Dtos
 @using SocialCareManager.Web.Services.Api
 
 @inject CarePlanService CarePlanService
 
-@if (carePlan is null && !isCreating)
+@if (isLoading)
 {
     <SectionCard>
-        <SectionHeader Title="Care Plan" Icon="bi bi-clipboard2-check-fill" />
-
-        <p class="text-muted">
-            No active care plan has been created for this service user yet.
-        </p>
-
-        <button class="btn btn-primary" @onclick="StartCreate">
-            <i class="bi bi-plus-circle me-1"></i>
-            Create Care Plan
-        </button>
+        <p class="mb-0">Loading care plan...</p>
     </SectionCard>
 }
-else if (isCreating)
+else
 {
     <SectionCard>
-        <SectionHeader Title="Create Care Plan" Icon="bi bi-plus-circle" />
+        <ActionToolbar
+            Title="Care Plan"
+            Subtitle="Manage the current care plan and previous versions.">
 
-        <div class="mb-3">
-            <label class="form-label">Goal</label>
-            <textarea class="form-control" rows="3" @bind="newCarePlan.Goal"></textarea>
-        </div>
+            <Actions>
+                @if (activeCarePlan is not null && formMode is null)
+                {
+                    <button class="btn btn-outline-primary"
+                            @onclick="StartEdit">
+                        <i class="bi bi-pencil"></i>
+                        Edit current
+                    </button>
 
-        <div class="mb-3">
-            <label class="form-label">Needs</label>
-            <textarea class="form-control" rows="3" @bind="newCarePlan.Needs"></textarea>
-        </div>
+                    <button class="btn btn-primary"
+                            @onclick="StartNewVersion">
+                        <i class="bi bi-files"></i>
+                        Create new version
+                    </button>
 
-        <div class="mb-3">
-            <label class="form-label">Support Plan</label>
-            <textarea class="form-control" rows="3" @bind="newCarePlan.SupportPlan"></textarea>
-        </div>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="ToggleHistory">
+                        <i class="bi bi-clock-history"></i>
+                        @(showHistory ? "Hide history" : "View history")
+                    </button>
+                }
+            </Actions>
+        </ActionToolbar>
 
-        <div class="mb-3">
-            <label class="form-label">Risk Assessment</label>
-            <textarea class="form-control" rows="3" @bind="newCarePlan.RiskAssessment"></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Review Date</label>
-            <input type="date" class="form-control" @bind="newCarePlan.ReviewDate" />
-        </div>
-
-        <button class="btn btn-primary me-2" @onclick="CreateCarePlan">
-            Save Care Plan
-        </button>
-
-        <button class="btn btn-outline-secondary" @onclick="CancelCreate">
-            Cancel
-        </button>
-    </SectionCard>
-}
-else if (carePlan is not null)
-{
-    <SectionCard>
-
-        <div class="section-card-header">
-            <i class="bi bi-clipboard2-check-fill"></i>
-            <h3>Care Plan</h3>
-        </div>
-
-        <div class="care-plan-summary mb-4">
-
-            <div class="care-plan-summary-item">
-    <span>Status</span>
-
-    @if (carePlan!.IsActive)
-    {
-        <strong class="text-success">
-            <i class="bi bi-circle-fill me-1"></i>
-            Active
-        </strong>
-    }
-    else
-    {
-        <strong class="text-secondary">
-            <i class="bi bi-circle-fill me-1"></i>
-            Archived
-        </strong>
-    }
-</div>
-
-            <div class="care-plan-summary-item">
-                <span>Review</span>
-                <strong>@GetReviewStatusText()</strong>
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">
+                @errorMessage
             </div>
+        }
 
-            <div class="care-plan-summary-item">
-                <span>Created by</span>
-                <strong>@(carePlan.CreatedBy ?? "Unknown")</strong>
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success">
+                @successMessage
             </div>
+        }
 
-            <div class="care-plan-summary-item">
-                <span>Last updated</span>
-                <strong>
-                    @(carePlan.UpdatedAt is null
-                        ? "Not updated"
-                        : carePlan.UpdatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
-                </strong>
-            </div>
+        @if (activeCarePlan is null && formMode is null)
+        {
+            <EmptyState
+                Icon="bi bi-clipboard2-check"
+                Title="No care plan"
+                Description="No active care plan has been created for this person."
+                ShowButton="true"
+                ButtonText="Create care plan"
+                ButtonIcon="bi bi-plus-circle"
+                OnButtonClick="StartCreate" />
+        }
+        else if (formMode is not null)
+        {
+            <div class="card p-4 mb-4">
+                <h5 class="mb-2">@GetFormTitle()</h5>
 
-        </div>
+                <p class="text-muted">
+                    @GetFormDescription()
+                </p>
 
-        <div class="@GetReviewStatusClass() mb-4">
-            <i class="bi bi-calendar-check me-2"></i>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Main goal</label>
 
-            <div>
-                <strong>@GetReviewStatusText()</strong>
+                        <textarea class="form-control"
+                                  rows="3"
+                                  @bind="carePlanForm.Goal"
+                                  placeholder="Describe the main goal of the care plan.">
+                        </textarea>
+                    </div>
 
-                <div class="text-muted small">
-                    Next review: @carePlan.ReviewDate.ToShortDateString()
+                    <div class="col-12">
+                        <label class="form-label">Needs</label>
+
+                        <textarea class="form-control"
+                                  rows="3"
+                                  @bind="carePlanForm.Needs"
+                                  placeholder="Describe the person's needs.">
+                        </textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">How support should be provided</label>
+
+                        <textarea class="form-control"
+                                  rows="4"
+                                  @bind="carePlanForm.SupportPlan"
+                                  placeholder="Describe the agreed support actions.">
+                        </textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Risks and important considerations</label>
+
+                        <textarea class="form-control"
+                                  rows="3"
+                                  @bind="carePlanForm.RiskAssessment"
+                                  placeholder="Describe known risks and how they should be managed.">
+                        </textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Next review date</label>
+
+                        <input type="date"
+                               class="form-control"
+                               @bind="carePlanForm.ReviewDate" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-success"
+                            @onclick="SaveFormAsync"
+                            disabled="@isSaving">
+                        <i class="bi bi-check-circle"></i>
+                        @(isSaving ? "Saving..." : GetSaveButtonText())
+                    </button>
+
+                    <button class="btn btn-secondary"
+                            @onclick="CancelForm"
+                            disabled="@isSaving">
+                        Cancel
+                    </button>
                 </div>
             </div>
-        </div>
+        }
+        else if (displayedCarePlan is not null)
+        {
+            @if (!displayedCarePlan.IsActive)
+            {
+                <div class="alert alert-secondary d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>
+                            You are viewing archived version
+                            @displayedCarePlan.VersionNumber.
+                        </strong>
 
-        <div class="row g-4">
+                        <div class="small">
+                            This version cannot be edited.
+                        </div>
+                    </div>
 
-            <div class="col-lg-6">
-                <InfoCard Title="Goal" Icon="bi bi-bullseye">
-                    @carePlan.Goal
-                </InfoCard>
+                    <button class="btn btn-sm btn-outline-primary"
+                            @onclick="ShowCurrentVersion">
+                        Return to current version
+                    </button>
+                </div>
+            }
+
+            @if (displayedCarePlan.IsActive && IsReviewOverdue(displayedCarePlan))
+            {
+                <div class="alert alert-warning">
+                    <div class="fw-semibold">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Care plan review overdue
+                    </div>
+
+                    <div class="mt-1">
+                        Review the current plan or create a new version.
+                    </div>
+                </div>
+            }
+
+            <div class="care-plan-summary mb-4">
+                <div class="care-plan-summary-item">
+                    <span>Status</span>
+
+                    @if (displayedCarePlan.IsActive)
+                    {
+                        <strong class="text-success">
+                            <i class="bi bi-circle-fill me-1"></i>
+                            Active
+                        </strong>
+                    }
+                    else
+                    {
+                        <strong class="text-secondary">
+                            <i class="bi bi-archive-fill me-1"></i>
+                            Archived
+                        </strong>
+                    }
+                </div>
+
+                <div class="care-plan-summary-item">
+                    <span>Version</span>
+                    <strong>Version @displayedCarePlan.VersionNumber</strong>
+                </div>
+
+                <div class="care-plan-summary-item">
+                    <span>Review</span>
+                    <strong>@GetReviewStatusText(displayedCarePlan)</strong>
+                </div>
+
+                <div class="care-plan-summary-item">
+                    <span>Created by</span>
+                    <strong>@DisplayUser(displayedCarePlan.CreatedBy)</strong>
+                </div>
             </div>
 
-            <div class="col-lg-6">
-                <InfoCard Title="Needs" Icon="bi bi-heart-fill">
-                    @carePlan.Needs
-                </InfoCard>
+            <div class="@GetReviewStatusClass(displayedCarePlan) mb-4">
+                <i class="bi bi-calendar-check me-2"></i>
+
+                <div>
+                    <strong>@GetReviewStatusText(displayedCarePlan)</strong>
+
+                    <div class="text-muted small">
+                        Review date:
+                        @(displayedCarePlan.ReviewDate
+                            .ToLocalTime()
+                            .ToString("yyyy-MM-dd"))
+                    </div>
+                </div>
             </div>
 
-            <div class="col-lg-6">
-                <InfoCard Title="Support Plan" Icon="bi bi-people-fill">
-                    @carePlan.SupportPlan
-                </InfoCard>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <InfoCard Title="Main goal"
+                              Icon="bi bi-bullseye">
+                        @displayedCarePlan.Goal
+                    </InfoCard>
+                </div>
+
+                <div class="col-lg-6">
+                    <InfoCard Title="Needs"
+                              Icon="bi bi-heart-fill">
+                        @displayedCarePlan.Needs
+                    </InfoCard>
+                </div>
+
+                <div class="col-lg-6">
+                    <InfoCard Title="How support should be provided"
+                              Icon="bi bi-people-fill">
+                        @displayedCarePlan.SupportPlan
+                    </InfoCard>
+                </div>
+
+                <div class="col-lg-6">
+                    <InfoCard Title="Risks and important considerations"
+                              Icon="bi bi-exclamation-triangle-fill">
+                        @(string.IsNullOrWhiteSpace(displayedCarePlan.RiskAssessment)
+                            ? "No risks have been recorded."
+                            : displayedCarePlan.RiskAssessment)
+                    </InfoCard>
+                </div>
             </div>
 
-            <div class="col-lg-6">
-                <InfoCard Title="Risk Assessment" Icon="bi bi-exclamation-triangle-fill">
-                    @carePlan.RiskAssessment
-                </InfoCard>
-            </div>
-
-        </div>
-
+            <AuditInfo
+                CreatedAt="displayedCarePlan.CreatedAt"
+                CreatedBy="@displayedCarePlan.CreatedBy"
+                UpdatedAt="displayedCarePlan.UpdatedAt"
+                UpdatedBy="@displayedCarePlan.UpdatedBy" />
+        }
     </SectionCard>
+
+    @if (showHistory && history.Count > 0)
+    {
+        <CarePlanHistory
+            History="history"
+            OnSelect="SelectHistoryVersion" />
+    }
 }
 
 @code {
-
     [Parameter]
     public Guid ServiceUserId { get; set; }
 
-    private CarePlanDto? carePlan;
-    private CreateCarePlanDto newCarePlan = new();
-    private bool isCreating;
+    private CarePlanDto? activeCarePlan;
+    private CarePlanDto? displayedCarePlan;
 
-    protected override async Task OnInitializedAsync()
+    private List<CarePlanDto> history = new();
+
+    private CreateCarePlanDto carePlanForm = new();
+
+    private string? formMode;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool showHistory;
+
+    protected override async Task OnParametersSetAsync()
     {
-        await LoadCarePlan();
+        await LoadDataAsync();
     }
 
-    private async Task LoadCarePlan()
+    private async Task LoadDataAsync(Guid? selectedVersionId = null)
     {
-        carePlan = await CarePlanService.GetActiveAsync(ServiceUserId);
+        isLoading = true;
+        errorMessage = null;
+
+        activeCarePlan =
+            await CarePlanService.GetActiveAsync(ServiceUserId);
+
+        history =
+            await CarePlanService.GetHistoryAsync(ServiceUserId);
+
+        if (selectedVersionId.HasValue)
+        {
+            displayedCarePlan = history.FirstOrDefault(
+                x => x.Id == selectedVersionId.Value);
+        }
+        else
+        {
+            displayedCarePlan = activeCarePlan;
+        }
+
+        isLoading = false;
     }
 
     private void StartCreate()
     {
-        newCarePlan = new CreateCarePlanDto();
-        isCreating = true;
+        ClearMessages();
+
+        formMode = "create";
+
+        carePlanForm = new CreateCarePlanDto
+        {
+            ReviewDate = DateTime.Today.AddMonths(3),
+            IsActive = true
+        };
     }
 
-    private void CancelCreate()
+    private void StartEdit()
     {
-        isCreating = false;
-        newCarePlan = new CreateCarePlanDto();
+        if (activeCarePlan is null)
+            return;
+
+        ClearMessages();
+
+        formMode = "edit";
+
+        carePlanForm = CopyToForm(activeCarePlan);
     }
 
-    private async Task CreateCarePlan()
-{
-    var createdCarePlan = await CarePlanService.CreateAsync(
-        ServiceUserId,
-        newCarePlan);
-
-    if (createdCarePlan is null)
-        return;
-
-    isCreating = false;
-    newCarePlan = new CreateCarePlanDto();
-
-    await LoadCarePlan();
-}
-
-    private string GetReviewStatusText()
+    private void StartNewVersion()
     {
-        if (carePlan is null)
-            return string.Empty;
+        if (activeCarePlan is null)
+            return;
 
-        var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
+        ClearMessages();
+
+        formMode = "new-version";
+
+        carePlanForm = CopyToForm(activeCarePlan);
+
+        if (carePlanForm.ReviewDate.Date <= DateTime.Today)
+        {
+            carePlanForm.ReviewDate =
+                DateTime.Today.AddMonths(3);
+        }
+    }
+
+    private void CancelForm()
+    {
+        formMode = null;
+        carePlanForm = new CreateCarePlanDto();
+        ClearMessages();
+    }
+
+    private async Task SaveFormAsync()
+    {
+        ClearMessages();
+
+        if (!ValidateForm())
+            return;
+
+        isSaving = true;
+
+        try
+        {
+            if (formMode == "create")
+            {
+                var created = await CarePlanService.CreateAsync(
+                    ServiceUserId,
+                    carePlanForm);
+
+                if (created is null)
+                {
+                    errorMessage =
+                        "The care plan could not be created.";
+                    return;
+                }
+
+                formMode = null;
+                successMessage = "Care plan created successfully.";
+
+                await LoadDataAsync(created.Id);
+                displayedCarePlan = activeCarePlan;
+            }
+            else if (formMode == "edit")
+            {
+                if (activeCarePlan is null)
+                    return;
+
+                var updateDto = ToUpdateDto(carePlanForm);
+
+                var updated =
+                    await CarePlanService.UpdateCurrentAsync(
+                        ServiceUserId,
+                        activeCarePlan.Id,
+                        updateDto);
+
+                if (!updated)
+                {
+                    errorMessage =
+                        "The care plan could not be updated.";
+                    return;
+                }
+
+                formMode = null;
+                successMessage = "Care plan updated successfully.";
+
+                await LoadDataAsync();
+            }
+            else if (formMode == "new-version")
+            {
+                if (activeCarePlan is null)
+                    return;
+
+                var createdVersion =
+                    await CarePlanService.CreateNewVersionAsync(
+                        ServiceUserId,
+                        activeCarePlan.Id,
+                        carePlanForm);
+
+                if (createdVersion is null)
+                {
+                    errorMessage =
+                        "The new care plan version could not be created.";
+                    return;
+                }
+
+                formMode = null;
+                showHistory = true;
+                successMessage =
+                    $"Version {createdVersion.VersionNumber} created successfully.";
+
+                await LoadDataAsync();
+            }
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ToggleHistory()
+    {
+        showHistory = !showHistory;
+    }
+
+    private void SelectHistoryVersion(CarePlanDto plan)
+    {
+        ClearMessages();
+        displayedCarePlan = plan;
+        showHistory = true;
+        formMode = null;
+    }
+
+    private void ShowCurrentVersion()
+    {
+        ClearMessages();
+        displayedCarePlan = activeCarePlan;
+    }
+
+    private bool ValidateForm()
+    {
+        if (string.IsNullOrWhiteSpace(carePlanForm.Goal))
+        {
+            errorMessage = "Enter the main goal.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(carePlanForm.Needs))
+        {
+            errorMessage = "Describe the person's needs.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(carePlanForm.SupportPlan))
+        {
+            errorMessage =
+                "Describe how support should be provided.";
+            return false;
+        }
+
+        if (carePlanForm.ReviewDate == default)
+        {
+            errorMessage = "Enter a review date.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static CreateCarePlanDto CopyToForm(
+        CarePlanDto carePlan)
+    {
+        return new CreateCarePlanDto
+        {
+            Goal = carePlan.Goal,
+            Needs = carePlan.Needs,
+            SupportPlan = carePlan.SupportPlan,
+            RiskAssessment = carePlan.RiskAssessment,
+            ReviewDate = carePlan.ReviewDate.ToLocalTime(),
+            IsActive = true
+        };
+    }
+
+    private static UpdateCarePlanDto ToUpdateDto(
+        CreateCarePlanDto source)
+    {
+        return new UpdateCarePlanDto
+        {
+            Goal = source.Goal,
+            Needs = source.Needs,
+            SupportPlan = source.SupportPlan,
+            RiskAssessment = source.RiskAssessment,
+            ReviewDate = source.ReviewDate
+        };
+    }
+
+    private string GetFormTitle()
+    {
+        return formMode switch
+        {
+            "edit" => "Edit current care plan",
+            "new-version" => "Create new care plan version",
+            _ => "Create care plan"
+        };
+    }
+
+    private string GetFormDescription()
+    {
+        return formMode switch
+        {
+            "edit" =>
+                "Update the current plan without creating a new version.",
+
+            "new-version" =>
+                "The current plan will be archived when this new version is saved.",
+
+            _ =>
+                "Create the first care plan for this person."
+        };
+    }
+
+    private string GetSaveButtonText()
+    {
+        return formMode switch
+        {
+            "edit" => "Save changes",
+            "new-version" => "Create new version",
+            _ => "Create care plan"
+        };
+    }
+
+    private static bool IsReviewOverdue(CarePlanDto carePlan)
+    {
+        return carePlan.ReviewDate.ToLocalTime().Date <
+               DateTime.Today;
+    }
+
+    private static string GetReviewStatusText(
+        CarePlanDto carePlan)
+    {
+        var reviewDate =
+            carePlan.ReviewDate.ToLocalTime().Date;
+
+        var daysRemaining =
+            (reviewDate - DateTime.Today).Days;
 
         if (daysRemaining < 0)
+        {
             return $"Overdue by {Math.Abs(daysRemaining)} days";
+        }
 
         if (daysRemaining == 0)
+        {
             return "Review due today";
+        }
+
+        if (daysRemaining == 1)
+        {
+            return "Review tomorrow";
+        }
 
         if (daysRemaining <= 7)
+        {
             return $"Review in {daysRemaining} days";
+        }
 
         return $"{daysRemaining} days remaining";
     }
 
-    private string GetReviewStatusClass()
+    private static string GetReviewStatusClass(
+        CarePlanDto carePlan)
     {
-        if (carePlan is null)
-            return "review-status";
-
-        var daysRemaining = (carePlan.ReviewDate.Date - DateTime.Today).Days;
+        var daysRemaining =
+            (carePlan.ReviewDate.ToLocalTime().Date -
+             DateTime.Today).Days;
 
         if (daysRemaining < 0)
             return "review-status danger";
@@ -231,5 +626,18 @@ else if (carePlan is not null)
             return "review-status warning";
 
         return "review-status success";
+    }
+
+    private static string DisplayUser(string? user)
+    {
+        return string.IsNullOrWhiteSpace(user)
+            ? "System"
+            : user;
+    }
+
+    private void ClearMessages()
+    {
+        errorMessage = null;
+        successMessage = null;
     }
 }
