@@ -46,4 +46,31 @@ public class DashboardService
             return null;
         }
     }
+
+    public async Task<List<DashboardAttentionItemDto>>
+    GetAttentionItemsAsync(string type)
+{
+    SetAuthorization();
+
+    var url =
+        $"{_baseUrl}api/dashboard/attention" +
+        $"?type={Uri.EscapeDataString(type)}";
+
+    var result = await _httpClient
+        .GetFromJsonAsync<List<DashboardAttentionItemDto>>(url);
+
+    return result ?? new List<DashboardAttentionItemDto>();
+}
+
+public async Task<List<DashboardActivityDto>>
+    GetActivityAsync(int take = 12)
+{
+    SetAuthorization();
+
+    var result = await _httpClient
+        .GetFromJsonAsync<List<DashboardActivityDto>>(
+            $"{_baseUrl}api/dashboard/activity?take={take}");
+
+    return result ?? new List<DashboardActivityDto>();
+}
 }

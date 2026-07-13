@@ -1,10 +1,10 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 
+@using SocialCareManager.Web.Components.Dashboard
 @using SocialCareManager.Web.Dtos.Dashboard
 @using SocialCareManager.Web.Services
 @using SocialCareManager.Web.Services.Api
-@using SocialCareManager.Web.Components.Dashboard
 
 @inject DashboardService DashboardService
 @inject AuthService AuthService
@@ -46,6 +46,7 @@ else
 
     <div class="mb-4">
         <span class="text-muted">Signed in as</span>
+
         <strong class="ms-1">
             @(string.IsNullOrWhiteSpace(AuthService.Email)
                 ? "Unknown user"
@@ -78,6 +79,7 @@ else
 
                 <div>
                     <strong>Loading dashboard</strong>
+
                     <div class="text-muted">
                         Collecting current information.
                     </div>
@@ -88,14 +90,12 @@ else
     else if (insights is not null)
     {
         <section class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h3 class="mb-1">Overview</h3>
+            <div class="mb-3">
+                <h3 class="mb-1">Overview</h3>
 
-                    <p class="text-muted mb-0">
-                        Current totals across the system.
-                    </p>
-                </div>
+                <p class="text-muted mb-0">
+                    Current totals across the system.
+                </p>
             </div>
 
             <div class="row g-3">
@@ -174,7 +174,7 @@ else
             </div>
         </section>
 
-        <section class="mb-5">
+        <section class="mb-4">
             <div class="mb-3">
                 <h3 class="mb-1">Needs attention</h3>
 
@@ -200,7 +200,7 @@ else
                             Description="Active plans with a review date that has passed."
                             Icon="bi bi-clipboard-x"
                             Severity="@GetSeverity(insights.CarePlansOverdue)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenCarePlansOverdueAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -210,7 +210,7 @@ else
                             Description="Care plans due for review within seven days."
                             Icon="bi bi-calendar2-week"
                             Severity="@GetWarningSeverity(insights.CarePlansDueSoon)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenCarePlansDueSoonAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -220,7 +220,7 @@ else
                             Description="Medication doses that have not yet been recorded."
                             Icon="bi bi-capsule"
                             Severity="@GetSeverity(insights.MedicationWaiting)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenMedicationWaitingAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -230,7 +230,7 @@ else
                             Description="Refused, omitted or unavailable medication doses."
                             Icon="bi bi-capsule-pill"
                             Severity="@GetSeverity(insights.MedicationMissed)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenMedicationMissedAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -240,7 +240,7 @@ else
                             Description="Open incidents marked high or critical."
                             Icon="bi bi-exclamation-octagon-fill"
                             Severity="@GetSeverity(insights.HighSeverityIncidents)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenHighIncidentsAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -250,7 +250,7 @@ else
                             Description="Scheduled activities whose end time has passed."
                             Icon="bi bi-calendar-x"
                             Severity="@GetSeverity(insights.CalendarOverdue)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenCalendarOverdueAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -260,7 +260,7 @@ else
                             Description="Service users without a recent daily note."
                             Icon="bi bi-journal-x"
                             Severity="@GetWarningSeverity(insights.MissingDailyNotes)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenMissingDailyNotesAsync" />
                     </div>
 
                     <div class="col-md-6 col-xl-4">
@@ -270,13 +270,32 @@ else
                             Description="Service users without a registered contact."
                             Icon="bi bi-person-exclamation"
                             Severity="@GetWarningSeverity(insights.MissingNextOfKin)"
-                            OnOpen="OpenServiceUsers" />
+                            OnOpen="OpenMissingNextOfKinAsync" />
                     </div>
                 </div>
             }
         </section>
 
-        <section>
+        @if (selectedAttentionType is not null)
+        {
+            <section class="mb-5">
+                <DashboardAttentionList
+                    Title="@selectedAttentionTitle"
+                    Items="attentionItems"
+                    IsLoading="isLoadingAttention"
+                    OnOpen="OpenAttentionItem"
+                    OnClose="CloseAttention" />
+            </section>
+        }
+
+        <section class="mb-5">
+            <DashboardActivityFeed
+                Activities="activities"
+                IsLoading="isLoadingActivity"
+                OnOpen="OpenActivity" />
+        </section>
+
+        <section class="mb-4">
             <div class="mb-3">
                 <h3 class="mb-1">Quick actions</h3>
 
@@ -285,18 +304,54 @@ else
                 </p>
             </div>
 
-            <div class="d-flex gap-2 flex-wrap">
-                <a class="btn btn-primary"
-                   href="/serviceusers">
-                    <i class="bi bi-people-fill me-1"></i>
-                    View service users
-                </a>
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                    <a class="quick-action-card"
+                       href="/serviceusers">
+                        <i class="bi bi-people-fill"></i>
 
-                <a class="btn btn-outline-primary"
-                   href="/serviceusers">
-                    <i class="bi bi-person-plus-fill me-1"></i>
-                    Add service user
-                </a>
+                        <div>
+                            <strong>Service users</strong>
+                            <span>View all care records</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a class="quick-action-card"
+                       href="/serviceusers">
+                        <i class="bi bi-person-plus-fill"></i>
+
+                        <div>
+                            <strong>Add service user</strong>
+                            <span>Create a new profile</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a class="quick-action-card"
+                       href="/serviceusers">
+                        <i class="bi bi-journal-plus"></i>
+
+                        <div>
+                            <strong>Write daily note</strong>
+                            <span>Select a service user</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <a class="quick-action-card"
+                       href="/serviceusers">
+                        <i class="bi bi-exclamation-triangle"></i>
+
+                        <div>
+                            <strong>Report incident</strong>
+                            <span>Select a service user</span>
+                        </div>
+                    </a>
+                </div>
             </div>
         </section>
     }
@@ -305,7 +360,19 @@ else
 @code {
     private DashboardInsightsDto? insights;
 
+    private List<DashboardAttentionItemDto> attentionItems = new();
+
+    private List<DashboardActivityDto> activities = new();
+
+    private string? selectedAttentionType;
+
+    private string selectedAttentionTitle = string.Empty;
+
     private bool isLoading = true;
+
+    private bool isLoadingAttention;
+
+    private bool isLoadingActivity;
 
     private string? errorMessage;
 
@@ -335,22 +402,150 @@ else
     private async Task LoadDashboardAsync()
     {
         isLoading = true;
+        isLoadingActivity = true;
         errorMessage = null;
 
-        insights = await DashboardService.GetInsightsAsync();
+        try
+        {
+            insights =
+                await DashboardService.GetInsightsAsync();
 
-        if (insights is null)
+            activities =
+                await DashboardService.GetActivityAsync(12);
+
+            if (insights is null)
+            {
+                errorMessage =
+                    "Dashboard information could not be loaded.";
+            }
+
+            if (selectedAttentionType is not null)
+            {
+                attentionItems =
+                    await DashboardService.GetAttentionItemsAsync(
+                        selectedAttentionType);
+            }
+        }
+        catch (HttpRequestException)
         {
             errorMessage =
-                "Dashboard information could not be loaded.";
+                "Dashboard information could not be loaded. Check that the API is running.";
         }
-
-        isLoading = false;
+        finally
+        {
+            isLoadingActivity = false;
+            isLoading = false;
+        }
     }
 
     private async Task RefreshAsync()
     {
         await LoadDashboardAsync();
+    }
+
+    private async Task OpenAttentionAsync(
+        string type,
+        string title)
+    {
+        selectedAttentionType = type;
+        selectedAttentionTitle = title;
+        isLoadingAttention = true;
+        errorMessage = null;
+        attentionItems.Clear();
+
+        try
+        {
+            attentionItems =
+                await DashboardService.GetAttentionItemsAsync(type);
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage =
+                "The selected dashboard details could not be loaded.";
+        }
+        finally
+        {
+            isLoadingAttention = false;
+        }
+    }
+
+    private Task OpenCarePlansOverdueAsync()
+    {
+        return OpenAttentionAsync(
+            "careplans-overdue",
+            "Care plans overdue");
+    }
+
+    private Task OpenCarePlansDueSoonAsync()
+    {
+        return OpenAttentionAsync(
+            "careplans-due-soon",
+            "Care plans due soon");
+    }
+
+    private Task OpenMedicationWaitingAsync()
+    {
+        return OpenAttentionAsync(
+            "medication-waiting",
+            "Medication doses waiting");
+    }
+
+    private Task OpenMedicationMissedAsync()
+    {
+        return OpenAttentionAsync(
+            "medication-missed",
+            "Medication not given");
+    }
+
+    private Task OpenHighIncidentsAsync()
+    {
+        return OpenAttentionAsync(
+            "high-incidents",
+            "High-severity incidents");
+    }
+
+    private Task OpenCalendarOverdueAsync()
+    {
+        return OpenAttentionAsync(
+            "calendar-overdue",
+            "Calendar events overdue");
+    }
+
+    private Task OpenMissingDailyNotesAsync()
+    {
+        return OpenAttentionAsync(
+            "missing-daily-notes",
+            "No daily note in 72 hours");
+    }
+
+    private Task OpenMissingNextOfKinAsync()
+    {
+        return OpenAttentionAsync(
+            "missing-next-of-kin",
+            "Missing next of kin");
+    }
+
+    private void CloseAttention()
+    {
+        selectedAttentionType = null;
+        selectedAttentionTitle = string.Empty;
+        attentionItems.Clear();
+    }
+
+    private void OpenAttentionItem(
+        DashboardAttentionItemDto item)
+    {
+        Navigation.NavigateTo(
+            $"/serviceusers/{item.ServiceUserId}" +
+            $"?tab={item.TargetTab}");
+    }
+
+    private void OpenActivity(
+        DashboardActivityDto activity)
+    {
+        Navigation.NavigateTo(
+            $"/serviceusers/{activity.ServiceUserId}" +
+            $"?tab={activity.TargetTab}");
     }
 
     private void OpenServiceUsers()
