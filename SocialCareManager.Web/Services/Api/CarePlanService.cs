@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using SocialCareManager.Web.Configuration;
 using SocialCareManager.Web.Dtos;
-using SocialCareManager.Web.Services;
 
 namespace SocialCareManager.Web.Services.Api;
 
@@ -11,7 +10,7 @@ public class CarePlanService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthService _authService;
-    private readonly string _baseUrl;
+    private readonly ApiSettings _apiSettings;
 
     public CarePlanService(
         HttpClient httpClient,
@@ -20,7 +19,7 @@ public class CarePlanService
     {
         _httpClient = httpClient;
         _authService = authService;
-        _baseUrl = apiSettings.Value.BaseUrl;
+        _apiSettings = apiSettings.Value;
     }
 
     private void SetAuthorization()
@@ -31,15 +30,14 @@ public class CarePlanService
                 _authService.AccessToken);
     }
 
-    public async Task<CarePlanDto?> GetActiveAsync(
-        Guid serviceUserId)
+    public async Task<CarePlanDto?> GetActiveAsync(Guid serviceUserId)
     {
         SetAuthorization();
 
         try
         {
             return await _httpClient.GetFromJsonAsync<CarePlanDto>(
-                $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/active");
+                $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/active");
         }
         catch (HttpRequestException)
         {
@@ -47,13 +45,12 @@ public class CarePlanService
         }
     }
 
-    public async Task<List<CarePlanDto>> GetHistoryAsync(
-        Guid serviceUserId)
+    public async Task<List<CarePlanDto>> GetHistoryAsync(Guid serviceUserId)
     {
         SetAuthorization();
 
         var result = await _httpClient.GetFromJsonAsync<List<CarePlanDto>>(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/history");
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/history");
 
         return result ?? new List<CarePlanDto>();
     }
@@ -65,7 +62,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans",
             dto);
 
         if (!response.IsSuccessStatusCode)
@@ -82,7 +79,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/{carePlanId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -96,7 +93,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}/new-version",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/{carePlanId}/new-version",
             dto);
 
         if (!response.IsSuccessStatusCode)

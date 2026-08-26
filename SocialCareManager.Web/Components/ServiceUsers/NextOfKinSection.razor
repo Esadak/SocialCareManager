@@ -1,10 +1,13 @@
-@using System.Net.Http.Json
-@using System.Net.Http.Headers
 @using SocialCareManager.Web.Services
 @using SocialCareManager.Web.Components.Common
-@inject HttpClient Http
+@using SocialCareManager.Web.Services.Api
+@using SocialCareManager.Web.Dtos
+
+@inject NextOfKinService NextOfKinService
 @inject IJSRuntime JS
 @inject AuthService AuthService
+
+
 
 <h4>Next of Kin</h4>
 
@@ -118,29 +121,18 @@ else
         await LoadContacts();
     }
 
-    private void SetAuthorizationHeader()
-    {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
-    }
-
     private async Task LoadContacts()
     {
-        SetAuthorizationHeader();
-
-        contacts = await Http.GetFromJsonAsync<List<NextOfKinDto>>(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/nextofkin");
+        contacts = await NextOfKinService.GetAllAsync(ServiceUserId);
     }
 
     private async Task CreateContact()
     {
-        SetAuthorizationHeader();
-
-        var response = await Http.PostAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/nextofkin",
+        var success = await NextOfKinService.CreateAsync(
+            ServiceUserId,
             newContact);
 
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             newContact = new CreateNextOfKinDto();
             await LoadContacts();
@@ -173,16 +165,16 @@ else
         if (editingContactId is null)
             return;
 
-        SetAuthorizationHeader();
-
-        var response = await Http.PutAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/nextofkin/{editingContactId}",
+        var success = await NextOfKinService.UpdateAsync(
+            ServiceUserId,
+            editingContactId.Value,
             editContact);
 
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             editingContactId = null;
             editContact = new EditNextOfKinDto();
+
             await LoadContacts();
         }
     }
@@ -196,48 +188,13 @@ else
         if (!confirmed)
             return;
 
-        SetAuthorizationHeader();
+        var success = await NextOfKinService.DeleteAsync(
+            ServiceUserId,
+            contactId);
 
-        var response = await Http.DeleteAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}/nextofkin/{contactId}");
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             await LoadContacts();
         }
-    }
-
-    private class NextOfKinDto
-    {
-        public Guid Id { get; set; }
-        public Guid ServiceUserId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Relationship { get; set; } = string.Empty;
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public bool IsEmergencyContact { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-    }
-
-    private class CreateNextOfKinDto
-    {
-        public string FullName { get; set; } = string.Empty;
-        public string Relationship { get; set; } = string.Empty;
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public bool IsEmergencyContact { get; set; }
-    }
-
-    private class EditNextOfKinDto
-    {
-        public string FullName { get; set; } = string.Empty;
-        public string Relationship { get; set; } = string.Empty;
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public bool IsEmergencyContact { get; set; }
     }
 }

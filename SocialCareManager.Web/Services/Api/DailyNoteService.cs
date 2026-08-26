@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
+using SocialCareManager.Web.Configuration;
 using SocialCareManager.Web.Dtos.DailyNotes;
 
 namespace SocialCareManager.Web.Services.Api;
@@ -8,11 +10,16 @@ public class DailyNoteService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthService _authService;
+    private readonly ApiSettings _apiSettings;
 
-    public DailyNoteService(HttpClient httpClient, AuthService authService)
+    public DailyNoteService(
+        HttpClient httpClient,
+        AuthService authService,
+        IOptions<ApiSettings> apiSettings)
     {
         _httpClient = httpClient;
         _authService = authService;
+        _apiSettings = apiSettings.Value;
     }
 
     private void SetAuthorization()
@@ -26,7 +33,7 @@ public class DailyNoteService
         SetAuthorization();
 
         var notes = await _httpClient.GetFromJsonAsync<List<DailyNoteDto>>(
-            $"http://localhost:5195/api/serviceusers/{serviceUserId}/dailynotes");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/dailynotes");
 
         return notes?
             .OrderByDescending(x => x.CreatedAt)
@@ -38,7 +45,7 @@ public class DailyNoteService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{serviceUserId}/dailynotes",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/dailynotes",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -49,7 +56,7 @@ public class DailyNoteService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{serviceUserId}/dailynotes/{noteId}",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/dailynotes/{noteId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -60,14 +67,16 @@ public class DailyNoteService
         SetAuthorization();
 
         var response = await _httpClient.DeleteAsync(
-            $"http://localhost:5195/api/serviceusers/{serviceUserId}/dailynotes/{noteId}");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/dailynotes/{noteId}");
 
         return response.IsSuccessStatusCode;
     }
 
     public async Task<int> GetCountAsync(Guid serviceUserId)
-{
-    var notes = await GetAllAsync(serviceUserId);
-    return notes?.Count ?? 0;
-}
+    {
+        Console.WriteLine($"API BASE URL: {_apiSettings.BaseUrl}");
+Console.WriteLine($"DAILY NOTES URL: {_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/dailynotes");
+        var notes = await GetAllAsync(serviceUserId);
+        return notes?.Count ?? 0;
+    }
 }

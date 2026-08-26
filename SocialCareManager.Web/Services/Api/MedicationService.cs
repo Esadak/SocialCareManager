@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using SocialCareManager.Web.Configuration;
 using SocialCareManager.Web.Dtos;
-using SocialCareManager.Web.Services;
 
 namespace SocialCareManager.Web.Services.Api;
 
@@ -11,7 +10,7 @@ public class MedicationService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthService _authService;
-    private readonly string _baseUrl;
+    private readonly ApiSettings _apiSettings;
 
     public MedicationService(
         HttpClient httpClient,
@@ -20,7 +19,7 @@ public class MedicationService
     {
         _httpClient = httpClient;
         _authService = authService;
-        _baseUrl = apiSettings.Value.BaseUrl;
+        _apiSettings = apiSettings.Value;
     }
 
     private void SetAuthorization()
@@ -34,17 +33,19 @@ public class MedicationService
         SetAuthorization();
 
         var result = await _httpClient.GetFromJsonAsync<List<MedicationDto>>(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/medications");
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications");
 
         return result ?? new List<MedicationDto>();
     }
 
-    public async Task<MedicationDto?> CreateAsync(Guid serviceUserId, CreateMedicationDto dto)
+    public async Task<MedicationDto?> CreateAsync(
+        Guid serviceUserId,
+        CreateMedicationDto dto)
     {
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/medications",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications",
             dto);
 
         if (!response.IsSuccessStatusCode)
@@ -53,23 +54,28 @@ public class MedicationService
         return await response.Content.ReadFromJsonAsync<MedicationDto>();
     }
 
-    public async Task<bool> UpdateAsync(Guid serviceUserId, Guid medicationId, EditMedicationDto dto)
+    public async Task<bool> UpdateAsync(
+        Guid serviceUserId,
+        Guid medicationId,
+        EditMedicationDto dto)
     {
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/medications/{medicationId}",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications/{medicationId}",
             dto);
 
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> DeleteAsync(Guid serviceUserId, Guid medicationId)
+    public async Task<bool> DeleteAsync(
+        Guid serviceUserId,
+        Guid medicationId)
     {
         SetAuthorization();
 
         var response = await _httpClient.DeleteAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/medications/{medicationId}");
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications/{medicationId}");
 
         return response.IsSuccessStatusCode;
     }

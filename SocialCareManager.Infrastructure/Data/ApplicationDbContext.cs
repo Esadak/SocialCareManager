@@ -40,6 +40,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CalendarEvent> CalendarEvents =>
     Set<CalendarEvent>();
 
+    public DbSet<CareTask> CareTasks =>
+    Set<CareTask>();
+
+public DbSet<CareTaskFollowUp> CareTaskFollowUps =>
+    Set<CareTaskFollowUp>();
+
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -298,5 +306,116 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
               .HasQueryFilter(x =>
               !x.IsDeleted &&
               !x.ServiceUser.IsDeleted);
+
+
+
+        modelBuilder.Entity<CareTask>(entity =>
+{
+    entity.ToTable("CareTasks");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Title)
+        .HasMaxLength(200)
+        .IsRequired();
+
+    entity.Property(x => x.Description)
+        .HasMaxLength(4000);
+
+    entity.Property(x => x.Status)
+        .HasConversion<string>()
+        .HasMaxLength(30);
+
+    entity.Property(x => x.Priority)
+        .HasConversion<string>()
+        .HasMaxLength(20);
+
+    entity.Property(x => x.Recurrence)
+        .HasConversion<string>()
+        .HasMaxLength(20);
+
+    entity.Property(x => x.AssignedTo)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.StartedBy)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CompletedBy)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CancelledBy)
+        .HasMaxLength(256);
+
+    entity.Property(x => x.CancellationReason)
+        .HasMaxLength(1000);
+
+    entity.HasOne(x => x.ServiceUser)
+        .WithMany(x => x.CareTasks)
+        .HasForeignKey(x => x.ServiceUserId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(x => x.ParentTask)
+        .WithMany(x => x.GeneratedTasks)
+        .HasForeignKey(x => x.ParentTaskId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasMany(x => x.FollowUps)
+        .WithOne(x => x.CareTask)
+        .HasForeignKey(x => x.CareTaskId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<CareTaskFollowUp>(entity =>
+{
+    entity.ToTable("CareTaskFollowUps");
+
+    entity.HasKey(x => x.Id);
+
+    entity.Property(x => x.Note)
+        .HasMaxLength(3000)
+        .IsRequired();
+
+    entity.Property(x => x.FollowedUpBy)
+        .HasMaxLength(256);
+
+    entity.HasIndex(x => x.CareTaskId);
+
+    entity.HasIndex(x => x.FollowedUpAt);
+});
+
+    entity.HasIndex(x => x.ServiceUserId);
+
+    entity.HasIndex(x => x.Status);
+
+    entity.HasIndex(x => x.Priority);
+
+    entity.HasIndex(x => x.DueAt);
+
+    entity.HasIndex(x => x.AssignedTo);
+
+    entity.HasIndex(x => x.ParentTaskId);
+
+    modelBuilder.Entity<CareTask>()
+    .HasQueryFilter(x =>
+        !x.IsDeleted &&
+        !x.ServiceUser.IsDeleted);
+
+modelBuilder.Entity<CareTaskFollowUp>()
+    .HasQueryFilter(x =>
+        !x.IsDeleted &&
+        !x.CareTask.IsDeleted &&
+        !x.CareTask.ServiceUser.IsDeleted);
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.Status
+    });
+
+    entity.HasIndex(x => new
+    {
+        x.ServiceUserId,
+        x.DueAt
+    });
+});
     }
 }

@@ -7,9 +7,9 @@ using SocialCareManager.Web.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<ApiSettings>(
-   builder.Configuration.GetSection("ApiSettings"));
+builder.Configuration.GetSection("ApiSettings"));
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ServiceUserService>();
 builder.Services.AddScoped<DailyNoteService>();
 builder.Services.AddScoped<NextOfKinService>();
@@ -25,6 +25,19 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
+if (app.Environment.IsProduction())
+{
+    var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"];
+
+    if (string.IsNullOrWhiteSpace(apiBaseUrl) ||
+        apiBaseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException(
+            "ApiSettings:BaseUrl is missing or still points to localhost. " +
+            "Set the ApiSettings__BaseUrl environment variable to the production API URL.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

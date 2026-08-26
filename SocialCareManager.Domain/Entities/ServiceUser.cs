@@ -28,4 +28,7 @@ public class ServiceUser  : BaseEntity
 
     public ICollection<CalendarEvent> CalendarEvents { get; set; }
     = new List<CalendarEvent>();
+
+    public ICollection<CareTask> CareTasks { get; set; }
+    = new List<CareTask>();
 }

@@ -38,6 +38,8 @@ app.MapIdentityApi<ApplicationUser>();
 
 app.MapControllers();
 
+if (app.Environment.IsDevelopment())
+{
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -98,6 +100,7 @@ if (staffUser is not null &&
     !await userManager.IsInRoleAsync(staffUser, "Staff"))
 {
     await userManager.AddToRoleAsync(staffUser, "Staff");
+}
 }
 }
 

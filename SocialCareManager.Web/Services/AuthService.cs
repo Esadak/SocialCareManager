@@ -1,11 +1,14 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
+using SocialCareManager.Web.Configuration;
 
 namespace SocialCareManager.Web.Services;
 
 public class AuthService
 {
-    private readonly HttpClient _httpClient;
+private readonly HttpClient _httpClient;
+private readonly ApiSettings _apiSettings;
 
     public string? AccessToken { get; private set; }
     public string? Email { get; private set; }
@@ -14,38 +17,41 @@ public class AuthService
     public bool IsLoggedIn => !string.IsNullOrWhiteSpace(AccessToken);
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-    public AuthService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
+    public AuthService(
+    HttpClient httpClient,
+    IOptions<ApiSettings> apiSettings)
+{
+    _httpClient = httpClient;
+    _apiSettings = apiSettings.Value;
+}
 
     public async Task<bool> LoginAsync(string email, string password)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            "http://localhost:5195/login",
-            new LoginRequest(email, password));
+{
+    var response = await _httpClient.PostAsJsonAsync(
+        $"{_apiSettings.BaseUrl}login",
+        new LoginRequest(email, password));
 
-        if (!response.IsSuccessStatusCode)
-            return false;
+    if (!response.IsSuccessStatusCode)
+        return false;
 
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+    var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-        AccessToken = loginResponse?.AccessToken;
+    AccessToken = loginResponse?.AccessToken;
 
-        if (string.IsNullOrWhiteSpace(AccessToken))
-            return false;
+    if (string.IsNullOrWhiteSpace(AccessToken))
+        return false;
 
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AccessToken);
+    _httpClient.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", AccessToken);
 
-        var me = await _httpClient.GetFromJsonAsync<MeResponse>(
-            "http://localhost:5195/api/account/me");
+    var me = await _httpClient.GetFromJsonAsync<MeResponse>(
+        $"{_apiSettings.BaseUrl}api/account/me");
 
-        Email = me?.Email ?? email;
-        Role = me?.Roles?.FirstOrDefault();
+    Email = me?.Email ?? email;
+    Role = me?.Roles?.FirstOrDefault();
 
-        return true;
-    }
+    return true;
+}
 
     public void Logout()
     {

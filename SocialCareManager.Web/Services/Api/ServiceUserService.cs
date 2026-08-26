@@ -35,6 +35,9 @@ public class ServiceUserService
     {
         SetAuthorization();
 
+        Console.WriteLine($"SERVICE USER BASE URL: '{_baseUrl}'");
+    Console.WriteLine($"SERVICE USER REQUEST URL: '{_baseUrl}api/serviceusers'");
+
         return await _httpClient.GetFromJsonAsync<List<ServiceUserDto>>(
             $"{_baseUrl}api/serviceusers");
     }
@@ -42,6 +45,8 @@ public class ServiceUserService
     public async Task<ServiceUserDto?> GetAsync(Guid id)
     {
         SetAuthorization();
+
+        
 
         return await _httpClient.GetFromJsonAsync<ServiceUserDto>(
             $"{_baseUrl}api/serviceusers/{id}");

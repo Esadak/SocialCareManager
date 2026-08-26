@@ -1,9 +1,8 @@
 @using SocialCareManager.Web.Dtos
-@using System.Net.Http.Json
-@using System.Net.Http.Headers
 @using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Services.Api
 @using SocialCareManager.Web.Components.Common
-@inject HttpClient Http
+@inject ServiceUserService ServiceUserService
 @inject NavigationManager Navigation
 @inject AuthService AuthService
 
@@ -107,18 +106,9 @@ else
         await LoadServiceUser();
     }
 
-    private void SetAuthorizationHeader()
-    {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
-    }
-
     private async Task LoadServiceUser()
     {
-        SetAuthorizationHeader();
-
-        serviceUser = await Http.GetFromJsonAsync<ServiceUserDto>(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}");
+        serviceUser = await ServiceUserService.GetAsync(ServiceUserId);
     }
 
     private void StartEdit()
@@ -143,13 +133,9 @@ else
 
     private async Task SaveUser()
     {
-        SetAuthorizationHeader();
+        var success = await ServiceUserService.UpdateAsync(ServiceUserId, editServiceUser);
 
-        var response = await Http.PutAsJsonAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}",
-            editServiceUser);
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             await LoadServiceUser();
             isEditing = false;
@@ -158,12 +144,9 @@ else
 
     private async Task DeleteUser()
     {
-        SetAuthorizationHeader();
+        var success = await ServiceUserService.DeleteAsync(ServiceUserId);
 
-        var response = await Http.DeleteAsync(
-            $"http://localhost:5195/api/serviceusers/{ServiceUserId}");
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             Navigation.NavigateTo("/serviceusers");
         }

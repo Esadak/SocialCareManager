@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 using SocialCareManager.Web.Configuration;
 using SocialCareManager.Web.Dtos;
-using SocialCareManager.Web.Services;
 
 namespace SocialCareManager.Web.Services.Api;
 
@@ -11,7 +10,7 @@ public class NextOfKinService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthService _authService;
-    private readonly string _baseUrl;
+    private readonly ApiSettings _apiSettings;
 
     public NextOfKinService(
         HttpClient httpClient,
@@ -20,7 +19,7 @@ public class NextOfKinService
     {
         _httpClient = httpClient;
         _authService = authService;
-        _baseUrl = apiSettings.Value.BaseUrl;
+        _apiSettings = apiSettings.Value;
     }
 
     private void SetAuthorization()
@@ -34,13 +33,12 @@ public class NextOfKinService
         SetAuthorization();
 
         return await _httpClient.GetFromJsonAsync<List<NextOfKinDto>>(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/nextofkin");
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin");
     }
 
     public async Task<int> GetCountAsync(Guid serviceUserId)
     {
         var contacts = await GetAllAsync(serviceUserId);
-
         return contacts?.Count ?? 0;
     }
 
@@ -49,7 +47,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/nextofkin",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -60,7 +58,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/nextofkin/{contactId}",
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin/{contactId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -71,7 +69,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.DeleteAsync(
-            $"{_baseUrl}api/serviceusers/{serviceUserId}/nextofkin/{contactId}");
+            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin/{contactId}");
 
         return response.IsSuccessStatusCode;
     }
