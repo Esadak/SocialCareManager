@@ -33,7 +33,7 @@ public class MedicationService
         SetAuthorization();
 
         var result = await _httpClient.GetFromJsonAsync<List<MedicationDto>>(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/medications");
 
         return result ?? new List<MedicationDto>();
     }
@@ -45,7 +45,7 @@ public class MedicationService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/medications",
             dto);
 
         if (!response.IsSuccessStatusCode)
@@ -62,7 +62,7 @@ public class MedicationService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications/{medicationId}",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/medications/{medicationId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -75,7 +75,7 @@ public class MedicationService
         SetAuthorization();
 
         var response = await _httpClient.DeleteAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/medications/{medicationId}");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/medications/{medicationId}");
 
         return response.IsSuccessStatusCode;
     }

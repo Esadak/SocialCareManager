@@ -1,0 +1,161 @@
+@page "/admin/users"
+@using SocialCareManager.Web.Dtos
+@using SocialCareManager.Web.Services
+@using SocialCareManager.Web.Services.Api
+@inject AdminUserService AdminUserService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="page-header">
+    <div class="page-title">
+        <i class="bi bi-person-badge-fill"></i>
+        <h1>Manage staff</h1>
+    </div>
+
+    <div class="page-subtitle">
+        Create accounts for staff members and view existing accounts.
+    </div>
+</div>
+
+@if (!AuthService.IsAdmin)
+{
+    <div class="section-card">
+        <p class="mb-0">You do not have permission to view this page.</p>
+    </div>
+}
+else
+{
+    <div class="section-card mb-4">
+        <div class="section-card-header">
+            <i class="bi bi-person-plus-fill"></i>
+            <h3>Add new staff member</h3>
+        </div>
+
+        <EditForm Model="newUser" OnValidSubmit="CreateUser">
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <input class="form-control" placeholder="First name" @bind="newUser.FirstName" />
+                </div>
+                <div class="col-md-6">
+                    <input class="form-control" placeholder="Last name" @bind="newUser.LastName" />
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <input type="email" class="form-control" placeholder="Email" @bind="newUser.Email" />
+            </div>
+
+            <div class="mb-2">
+                <input type="password" class="form-control" placeholder="Temporary password" @bind="newUser.Password" />
+            </div>
+
+            <div class="mb-3">
+                <select class="form-select" @bind="newUser.Role">
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            @if (successMessage is not null)
+            {
+                <div class="alert alert-success">@successMessage</div>
+            }
+
+            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                @(isSaving ? "Creating..." : "Create account")
+            </button>
+        </EditForm>
+    </div>
+
+    <div class="section-card">
+        <div class="section-card-header">
+            <i class="bi bi-people-fill"></i>
+            <h3>Existing staff</h3>
+        </div>
+
+        @if (staffUsers is null)
+        {
+            <p class="mb-0">Loading...</p>
+        }
+        else if (staffUsers.Count == 0)
+        {
+            <p class="mb-0">No staff accounts yet.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in staffUsers)
+                    {
+                        <tr>
+                            <td>@user.FirstName @user.LastName</td>
+                            <td>@user.Email</td>
+                            <td>@user.Role</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@code {
+    private List<StaffUserDto>? staffUsers;
+    private CreateStaffUserDto newUser = new();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (AuthService.IsAdmin)
+        {
+            await LoadStaff();
+        }
+    }
+
+    private async Task LoadStaff()
+    {
+        staffUsers = await AdminUserService.GetAllAsync();
+    }
+
+    private async Task CreateUser()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSaving = true;
+
+        var (success, error) = await AdminUserService.CreateAsync(newUser);
+
+        isSaving = false;
+
+        if (success)
+        {
+            successMessage = $"Account created for {newUser.Email}.";
+            newUser = new CreateStaffUserDto();
+            await LoadStaff();
+        }
+        else
+        {
+            errorMessage = error;
+        }
+    }
+}

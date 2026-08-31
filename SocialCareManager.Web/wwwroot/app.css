@@ -711,3 +711,55 @@ button.dashboard-stat-card:hover {
     color: #64748b;
     font-size: 0.9rem;
 }
+
+.profile-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+}
+
+.profile-modal-card {
+    background: #fff;
+    color: #212529;
+    border-radius: 10px;
+    width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #eee;
+    font-size: 1.4rem;
+}
+
+.profile-modal-header h5 {
+    font-size: 1rem;
+}
+
+.profile-modal-body {
+    padding: 1rem 1.25rem;
+}
+
+.profile-modal-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+}
+
+.profile-modal-row:last-child {
+    border-bottom: none;
+}

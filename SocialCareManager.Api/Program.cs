@@ -34,6 +34,20 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Equals("/register", StringComparison.OrdinalIgnoreCase) &&
+        HttpMethods.IsPost(context.Request.Method))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsync(
+            "Public registration is disabled. Contact an administrator to get an account created.");
+        return;
+    }
+
+    await next();
+});
+
 app.MapIdentityApi<ApplicationUser>();
 
 app.MapControllers();

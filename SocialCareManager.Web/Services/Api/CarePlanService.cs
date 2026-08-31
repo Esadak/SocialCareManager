@@ -37,7 +37,7 @@ public class CarePlanService
         try
         {
             return await _httpClient.GetFromJsonAsync<CarePlanDto>(
-                $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/active");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/careplans/active");
         }
         catch (HttpRequestException)
         {
@@ -49,10 +49,17 @@ public class CarePlanService
     {
         SetAuthorization();
 
-        var result = await _httpClient.GetFromJsonAsync<List<CarePlanDto>>(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/history");
+         try
+ {
+     var result = await _httpClient.GetFromJsonAsync<List<CarePlanDto>>(
+         $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/careplans/history");
 
-        return result ?? new List<CarePlanDto>();
+     return result ?? new List<CarePlanDto>();
+ }
+ catch (HttpRequestException)
+ {
+     return new List<CarePlanDto>();
+ }
     }
 
     public async Task<CarePlanDto?> CreateAsync(
@@ -62,7 +69,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/careplans",
             dto);
 
         if (!response.IsSuccessStatusCode)
@@ -79,7 +86,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/{carePlanId}",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -93,7 +100,7 @@ public class CarePlanService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/careplans/{carePlanId}/new-version",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/careplans/{carePlanId}/new-version",
             dto);
 
         if (!response.IsSuccessStatusCode)

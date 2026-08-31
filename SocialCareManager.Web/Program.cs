@@ -20,6 +20,7 @@ builder.Services.AddScoped<IncidentService>();
 builder.Services.AddScoped<CalendarEventService>();
 builder.Services.AddScoped<CalendarOverviewService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<AdminUserService>();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

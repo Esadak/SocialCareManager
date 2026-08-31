@@ -1,5 +1,5 @@
 ﻿@inject NavigationManager Navigation
-@rendermode InteractiveServer
+@implements IDisposable
 @using SocialCareManager.Web.Services
 @inject AuthService AuthService
 
@@ -14,6 +14,7 @@
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+
     <nav class="nav flex-column">
 
         <div class="nav-item px-3">
@@ -25,10 +26,10 @@
 
         @if (AuthService.IsLoggedIn)
         {
-            <div class="sidebar-user-simple px-3">
+            @* <div class="sidebar-user-simple px-3">
     <div class="sidebar-user-name">Admin</div>
     <div class="sidebar-user-role">@AuthService.Role</div>
-</div>
+</div> *@
 
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="serviceusers">
@@ -36,6 +37,57 @@
                     Service Users
                 </NavLink>
             </div>
+
+                  <div class="nav-item px-3">
+    <button class="nav-link btn btn-link" style="width:auto; padding:0.4rem 0.6rem;"
+            @onclick="ToggleProfile"
+            title="@(AuthService.FullName ?? AuthService.Email)">
+        <i class="bi bi-person-circle" style="font-size:1.3rem;"></i>
+    </button>
+</div>
+
+@if (showProfile)
+{
+    <div class="profile-modal-backdrop" @onclick="ToggleProfile">
+        <div class="profile-modal-card" @onclick:stopPropagation="true">
+            <div class="profile-modal-header">
+                <i class="bi bi-person-circle"></i>
+                <h5 class="mb-0">Min profil</h5>
+                <button class="btn-close ms-auto" @onclick="ToggleProfile"></button>
+            </div>
+
+            <div class="profile-modal-body">
+                <div class="profile-modal-row">
+                    <span>Namn</span>
+                    <strong>@(AuthService.FullName ?? "-")</strong>
+                </div>
+                <div class="profile-modal-row">
+                    <span>Email</span>
+                    <strong>@AuthService.Email</strong>
+                </div>
+                <div class="profile-modal-row">
+                    <span>Roll</span>
+                    <strong>@AuthService.Role</strong>
+                </div>
+                <div class="profile-modal-row">
+                    <span>Enhet</span>
+                    <strong class="text-muted">Ej tilldelad</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+             @if (AuthService.IsAdmin)
+             {
+                 <div class="nav-item px-3">
+                     <NavLink class="nav-link" href="admin/users">
+                         <i class="bi bi-person-badge-fill me-2"></i>
+                         Manage Staff
+                     </NavLink>
+                 </div>
+             }
 
             <div class="nav-item px-3">
                 <button class="nav-link btn btn-link text-start w-100" @onclick="Logout">
@@ -58,9 +110,30 @@
 </div>
 
 @code {
+
+         private bool showProfile;
+
+     private void ToggleProfile()
+     {
+         showProfile = !showProfile;
+     }
+
+         protected override void OnInitialized()
+     {
+         AuthService.OnChange += HandleAuthChanged;
+     }
+
+     private void HandleAuthChanged()
+     {
+         InvokeAsync(StateHasChanged);
+     }
     private void Logout()
     {
         AuthService.Logout();
         Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose(){
+        AuthService.OnChange -= HandleAuthChanged;
     }
 }

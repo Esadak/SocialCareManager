@@ -33,7 +33,7 @@ public class NextOfKinService
         SetAuthorization();
 
         return await _httpClient.GetFromJsonAsync<List<NextOfKinDto>>(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/nextofkin");
     }
 
     public async Task<int> GetCountAsync(Guid serviceUserId)
@@ -47,7 +47,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.PostAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/nextofkin",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -58,7 +58,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.PutAsJsonAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin/{contactId}",
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/nextofkin/{contactId}",
             dto);
 
         return response.IsSuccessStatusCode;
@@ -69,7 +69,7 @@ public class NextOfKinService
         SetAuthorization();
 
         var response = await _httpClient.DeleteAsync(
-            $"{_apiSettings.BaseUrl}/api/serviceusers/{serviceUserId}/nextofkin/{contactId}");
+            $"{_apiSettings.BaseUrl}api/serviceusers/{serviceUserId}/nextofkin/{contactId}");
 
         return response.IsSuccessStatusCode;
     }

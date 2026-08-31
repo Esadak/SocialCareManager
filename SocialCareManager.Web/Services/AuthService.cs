@@ -13,9 +13,14 @@ private readonly ApiSettings _apiSettings;
     public string? AccessToken { get; private set; }
     public string? Email { get; private set; }
     public string? Role { get; private set; }
+     public string? FullName { get; private set; }
 
     public bool IsLoggedIn => !string.IsNullOrWhiteSpace(AccessToken);
     public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+    public event Action? OnChange;
+
+    private void NotifyStateChanged() => OnChange?.Invoke();
 
     public AuthService(
     HttpClient httpClient,
@@ -50,6 +55,8 @@ private readonly ApiSettings _apiSettings;
     Email = me?.Email ?? email;
     Role = me?.Roles?.FirstOrDefault();
 
+    NotifyStateChanged();
+
     return true;
 }
 
@@ -59,6 +66,7 @@ private readonly ApiSettings _apiSettings;
         Email = null;
         Role = null;
         _httpClient.DefaultRequestHeaders.Authorization = null;
+        NotifyStateChanged();
     }
 
     private record LoginRequest(string Email, string Password);
@@ -75,5 +83,8 @@ private readonly ApiSettings _apiSettings;
     {
         public string Email { get; set; } = string.Empty;
         public List<string> Roles { get; set; } = new();
+       
+        public string FullName { get; set; } = string.Empty;   
+      
     }
 }

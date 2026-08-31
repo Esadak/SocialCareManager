@@ -1,5 +1,5 @@
 ﻿@page "/"
-@rendermode InteractiveServer
+
 
 @using SocialCareManager.Web.Components.Dashboard
 @using SocialCareManager.Web.Dtos.Dashboard
@@ -21,6 +21,7 @@
     <a class="btn btn-primary" href="/login">
         Go to login
     </a>
+    
 }
 else
 {
@@ -42,23 +43,6 @@ else
             <i class="bi bi-arrow-clockwise"></i>
             @(isLoading ? "Refreshing..." : "Refresh")
         </button>
-    </div>
-
-    <div class="mb-4">
-        <span class="text-muted">Signed in as</span>
-
-        <strong class="ms-1">
-            @(string.IsNullOrWhiteSpace(AuthService.Email)
-                ? "Unknown user"
-                : AuthService.Email)
-        </strong>
-
-        @if (!string.IsNullOrWhiteSpace(AuthService.Role))
-        {
-            <span class="badge bg-primary ms-2">
-                @AuthService.Role
-            </span>
-        }
     </div>
 
     @if (!string.IsNullOrWhiteSpace(errorMessage))
