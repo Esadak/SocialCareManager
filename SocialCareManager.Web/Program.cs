@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides; 
 using SocialCareManager.Web.Services;
 using SocialCareManager.Web.Components;
 using SocialCareManager.Web.Services.Api;
@@ -26,6 +27,13 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
+
+// --- DETTA LÖSER WEBSOCKET-PROBLEMET PÅ RENDER ---
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+// ------------------------------------------------
 
 if (app.Environment.IsProduction())
 {
