@@ -29,6 +29,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+
+
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
